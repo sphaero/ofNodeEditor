@@ -346,7 +346,7 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		Nodes::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
+        NodesEdit::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
 
 	public:
 		explicit NodesEdit();

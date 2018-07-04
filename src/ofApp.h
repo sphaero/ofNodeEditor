@@ -2,7 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxImGui.h"
-#include "Nodes.h"
+#include "NodesEdit.h"
 
 class ofApp : public ofBaseApp{
 
@@ -25,5 +25,5 @@ public:
     void gotMessage(ofMessage msg);
 
     ofxImGui::Gui gui;
-    ImGui::Nodes nodes;
+    ImGui::NodesEdit nodes;
 };

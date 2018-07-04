@@ -1,5 +1,5 @@
 #include "ofApp.h"
-#include "Nodes.h"
+#include "NodesEdit.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
