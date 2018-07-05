@@ -23,9 +23,12 @@ namespace ImGui
 	enum ConnectionType : uint32_t
 	{
 		ConnectionType_None = 0,
-		ConnectionType_Vec3,
-		ConnectionType_Float,
-		ConnectionType_Int,
+        ConnectionType_Float,
+        ConnectionType_Int,
+        ConnectionType_Vec2,
+        ConnectionType_Vec3,
+        ConnectionType_Vec4,
+        ConnectionType_OSC
 	};
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -68,17 +71,30 @@ namespace ImGui
 	{
 		////////////////////////////////////////////////////////////////////////////////
 		{
-			{ std::string("Test") },
+            { std::string("MOCAPBridge") },
 
 			{
-				{ std::string("FloatTEST"), ImGui::ConnectionType_Float },
-				{ std::string("Int"), ImGui::ConnectionType_Int }
+                { std::string("Trigger"), ImGui::ConnectionType_Int }
 			},
 
 			{
-				{ std::string("Float"), ImGui::ConnectionType_Float }
-			}
+                { std::string("Markers"), ImGui::ConnectionType_OSC },
+                { std::string("Skeletons"), ImGui::ConnectionType_OSC }
+            }
 		},
+        ////////////////////////////////////////////////////////////////////////////////
+        {
+            { std::string("Test") },
+
+            {
+                { std::string("FloatTEST"), ImGui::ConnectionType_Float },
+                { std::string("Int"), ImGui::ConnectionType_Int }
+            },
+
+            {
+                { std::string("Float"), ImGui::ConnectionType_Float }
+            }
+        },
 		////////////////////////////////////////////////////////////////////////////////
 		{
 			{ std::string("BigInput") },
