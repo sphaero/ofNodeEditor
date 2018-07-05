@@ -17,6 +17,8 @@ Project{
             "src/main.cpp",
             "src/ofApp.cpp",
             "src/ofApp.h",
+            "src/ofNodeEditor.cpp",
+            "src/ofNodeEditor.h",
         ]
 
         of.addons: [ 'ofxImGui'

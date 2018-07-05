@@ -133,19 +133,14 @@ namespace ImGui
 
 		{
 			auto &inputs = node->inputs_;
-			std::for_each
-			(
-				type.inputs_.begin(),
-				type.inputs_.end(),
-				[&inputs](auto& element)
-				{
-					auto connection = std::make_unique<Connection>();
-					connection->name_ = element.first;
-					connection->type_ = element.second;
+            std::for_each( type.inputs_.begin(), type.inputs_.end(), [&inputs](auto& element)
+            {
+                auto connection = std::make_unique<Connection>();
+                connection->name_ = element.first;
+                connection->type_ = element.second;
 
-					inputs.push_back(std::move(connection));
-				}
-			);
+                inputs.push_back(std::move(connection));
+            });
 
 			auto &outputs = node->outputs_;
 			std::for_each
@@ -925,6 +920,7 @@ namespace ImGui
                                 //****
                                 // Call subscribe as an input is connected to an output
                                 //****
+                                ConnectionAdded(connection.get());
                             }
 						}
 					}
@@ -1020,7 +1016,6 @@ namespace ImGui
 						{
 							element_.state_ = NodesState_DragingInputValid;
 							drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
-                            printf("New  Connection??\n");
 
 							if (!ImGui::IsMouseDown(0))
 							{
@@ -1038,6 +1033,7 @@ namespace ImGui
                                 //****
                                 // Call subscribe as an output is connected to an input
                                 //****
+                                ConnectionAdded(connection.get());
 							}
 						}
 					}
@@ -1171,44 +1167,44 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-//		{
-//			ImGui::SetCursorScreenPos(canvas_position_);
-//		
-//			switch (element_.state_)
-//			{
-//				case NodesState_Default: ImGui::Text("NodesState_Default"); break;
-//				case NodesState_Block: ImGui::Text("NodesState_Block"); break;
-//				case NodesState_HoverIO: ImGui::Text("NodesState_HoverIO"); break;
-//				case NodesState_HoverConnection: ImGui::Text("NodesState_HoverConnection"); break;
-//				case NodesState_HoverNode: ImGui::Text("NodesState_HoverNode"); break;
-//				case NodesState_DragingInput: ImGui::Text("NodesState_DragingInput"); break;
-//				case NodesState_DragingInputValid: ImGui::Text("NodesState_DragingInputValid"); break;
-//				case NodesState_DragingOutput: ImGui::Text("NodesState_DragingOutput"); break;
-//				case NodesState_DragingOutputValid: ImGui::Text("NodesState_DragingOutputValid"); break;
-//				case NodesState_DragingConnection: ImGui::Text("NodesState_DragingConnection"); break;
-//				case NodesState_DragingSelected: ImGui::Text("NodesState_DragingSelected"); break;
-//				case NodesState_SelectingEmpty: ImGui::Text("NodesState_SelectingEmpty"); break;
-//				case NodesState_SelectingValid: ImGui::Text("NodesState_SelectingValid"); break;
-//				case NodesState_SelectingMore: ImGui::Text("NodesState_SelectingMore"); break;
-//				case NodesState_Selected: ImGui::Text("NodesState_Selected"); break;
-//				case NodesState_SelectedConnection: ImGui::Text("NodesState_SelectedConnection"); break;
-//				default: ImGui::Text("UNKNOWN"); break;
-//			}
-//		
-//			ImGui::Text("");
-//		
-//			ImGui::Text("Mouse: %.2f, %.2f", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
-//			ImGui::Text("Mouse delta: %.2f, %.2f", ImGui::GetIO().MouseDelta.x, ImGui::GetIO().MouseDelta.y);
-//			ImGui::Text("Offset: %.2f, %.2f", offset.x, offset.y);
-//		
-//			ImGui::Text("");
-//		
-//			ImGui::Text("Canvas_mouse: %.2f, %.2f", canvas_mouse_.x, canvas_mouse_.y);
-//			ImGui::Text("Canvas_position: %.2f, %.2f", canvas_position_.x, canvas_position_.y);
-//			ImGui::Text("Canvas_size: %.2f, %.2f", canvas_size_.x, canvas_size_.y);
-//			ImGui::Text("Canvas_scroll: %.2f, %.2f", canvas_scroll_.x, canvas_scroll_.y);
-//			ImGui::Text("Canvas_scale: %.2f", canvas_scale_);
-//		}
+        {
+            ImGui::SetCursorScreenPos(canvas_position_);
+
+            switch (element_.state_)
+            {
+                case NodesState_Default: ImGui::Text("NodesState_Default"); break;
+                case NodesState_Block: ImGui::Text("NodesState_Block"); break;
+                case NodesState_HoverIO: ImGui::Text("NodesState_HoverIO"); break;
+                case NodesState_HoverConnection: ImGui::Text("NodesState_HoverConnection"); break;
+                case NodesState_HoverNode: ImGui::Text("NodesState_HoverNode"); break;
+                case NodesState_DragingInput: ImGui::Text("NodesState_DragingInput"); break;
+                case NodesState_DragingInputValid: ImGui::Text("NodesState_DragingInputValid"); break;
+                case NodesState_DragingOutput: ImGui::Text("NodesState_DragingOutput"); break;
+                case NodesState_DragingOutputValid: ImGui::Text("NodesState_DragingOutputValid"); break;
+                case NodesState_DragingConnection: ImGui::Text("NodesState_DragingConnection"); break;
+                case NodesState_DragingSelected: ImGui::Text("NodesState_DragingSelected"); break;
+                case NodesState_SelectingEmpty: ImGui::Text("NodesState_SelectingEmpty"); break;
+                case NodesState_SelectingValid: ImGui::Text("NodesState_SelectingValid"); break;
+                case NodesState_SelectingMore: ImGui::Text("NodesState_SelectingMore"); break;
+                case NodesState_Selected: ImGui::Text("NodesState_Selected"); break;
+                case NodesState_SelectedConnection: ImGui::Text("NodesState_SelectedConnection"); break;
+                default: ImGui::Text("UNKNOWN"); break;
+            }
+
+            ImGui::Text("");
+
+            ImGui::Text("Mouse: %.2f, %.2f", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+            ImGui::Text("Mouse delta: %.2f, %.2f", ImGui::GetIO().MouseDelta.x, ImGui::GetIO().MouseDelta.y);
+            ImGui::Text("Offset: %.2f, %.2f", offset.x, offset.y);
+
+            ImGui::Text("");
+
+            ImGui::Text("Canvas_mouse: %.2f, %.2f", canvas_mouse_.x, canvas_mouse_.y);
+            ImGui::Text("Canvas_position: %.2f, %.2f", canvas_position_.x, canvas_position_.y);
+            ImGui::Text("Canvas_size: %.2f, %.2f", canvas_size_.x, canvas_size_.y);
+            ImGui::Text("Canvas_scroll: %.2f, %.2f", canvas_scroll_.x, canvas_scroll_.y);
+            ImGui::Text("Canvas_scale: %.2f", canvas_scale_);
+        }
 
 		////////////////////////////////////////////////////////////////////////////////
 

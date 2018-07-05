@@ -144,14 +144,14 @@ namespace ImGui
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	class NodesEdit final
+    class NodesEdit
 	{
-	private:	
+    protected:
 		////////////////////////////////////////////////////////////////////////////////
 
-		struct Node;
+        struct Node;
 
-		struct Connection
+        struct Connection
 		{
 			ImVec2 position_;
 			std::string name_;
@@ -185,38 +185,38 @@ namespace ImGui
 			NodeStateFlag_Default = 1,
 		};
 
-		struct Node
-		{
-			int32_t id_; // 0 = empty, positive/negative = not selected/selected
-			int32_t state_;
+        struct Node
+        {
+            int32_t id_; // 0 = empty, positive/negative = not selected/selected
+            int32_t state_;
 
-			ImVec2 position_;
-			ImVec2 size_;
+            ImVec2 position_;
+            ImVec2 size_;
 
-			float collapsed_height;
-			float full_height;
+            float collapsed_height;
+            float full_height;
 
-			std::string name_;
-			std::vector<std::unique_ptr<Connection>> inputs_;
-			std::vector<std::unique_ptr<Connection>> outputs_;
+            std::string name_;
+            std::vector<std::unique_ptr<Connection>> inputs_;
+            std::vector<std::unique_ptr<Connection>> outputs_;
 
-			Node()
-			{
-				id_ = 0;
-				state_ = NodeStateFlag_Default;
+            Node()
+            {
+                id_ = 0;
+                state_ = NodeStateFlag_Default;
 
-				position_ = ImVec2(0.0f, 0.0f);
-				size_ = ImVec2(0.0f, 0.0f);
+                position_ = ImVec2(0.0f, 0.0f);
+                size_ = ImVec2(0.0f, 0.0f);
 
-				collapsed_height = 0.0f;
-				full_height = 0.0f;
-			}
+                collapsed_height = 0.0f;
+                full_height = 0.0f;
+            }
 
-			Node* Get()
-			{
-				return this;
-			}
-		};
+            Node* Get()
+            {
+                return this;
+            }
+        };
 
 		////////////////////////////////////////////////////////////////////////////////
 
@@ -248,7 +248,7 @@ namespace ImGui
 			ImRect rect_;
 
 			Node* node_;
-			Connection* connection_;
+            Connection* connection_;
 
 			void Reset(NodesState state = NodesState_Default)
 			{
@@ -360,14 +360,15 @@ namespace ImGui
 		void RenderLines(ImDrawList* draw_list, ImVec2 offset);
 		void DisplayNodes(ImDrawList* drawList, ImVec2 offset);
 
-		////////////////////////////////////////////////////////////////////////////////
-
-        NodesEdit::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
+        ////////////////////////////////////////////////////////////////////////////////
 
 	public:
 		explicit NodesEdit();
 		~NodesEdit();
 
 		void ProcessNodes();
-	};
+        NodesEdit::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
+        virtual void ConnectionAdded(NodesEdit::Connection* connection ) {};
+        virtual void ConnectionDeleted(NodesEdit::Connection* connection ) {};
+    };
 }

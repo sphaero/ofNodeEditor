@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "NodesEdit.h"
+#include "ofNodeEditor.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -12,6 +13,9 @@ void ofApp::setup(){
     io.Fonts->AddFontDefault();
     io.Fonts->AddFontFromFileTTF("/home/arnaud/src/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
     gui.setup();
+    gui.begin();
+    nodes.CreateNodeFromType(ImVec2(400,140), ImGui::nodes_types_[0]);
+    gui.end();
 }
 
 //--------------------------------------------------------------
