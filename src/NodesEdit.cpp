@@ -306,7 +306,8 @@ namespace ImGui
 
 	void NodesEdit::UpdateState(ImVec2 offset)
 	{
-		if (element_.state_ == NodesState_HoverNode && ImGui::IsMouseDoubleClicked(0))
+        // collapsing nodes
+        if (element_.state_ == NodesState_HoverNode && ImGui::IsMouseDoubleClicked(0))
 		{		
 			if (element_.node_->state_ < 0)
 			{	// collapsed node goes to full
@@ -323,7 +324,7 @@ namespace ImGui
 		switch (element_.state_)
 		{		
 			case NodesState_Default:
-			{
+            {
 				if (ImGui::IsMouseDown(0) && !ImGui::IsMouseDown(1) && !ImGui::IsMouseDown(2))
 				{
 					ImRect canvas = ImRect(ImVec2(0.0f, 0.0f), canvas_size_);
@@ -335,7 +336,7 @@ namespace ImGui
 
 					element_.Reset(NodesState_SelectingEmpty);
 
-					element_.position_ = ImGui::GetIO().MousePos;
+                    element_.position_ = ImGui::GetIO().MousePos;
 					element_.rect_.Min = ImGui::GetIO().MousePos;
 					element_.rect_.Max = ImGui::GetIO().MousePos;
 				}
@@ -384,7 +385,7 @@ namespace ImGui
 				ImVec2 p3 = ImGui::GetIO().MousePos + (ImVec2(+50.0f, 0.0f) * canvas_scale_);
 				ImVec2 p4 = ImGui::GetIO().MousePos;
 
-				ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
+                ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
 			case NodesState_DragingInputValid:
@@ -402,7 +403,7 @@ namespace ImGui
 				ImVec2 p3 = ImGui::GetIO().MousePos + (ImVec2(+50.0f, 0.0f) * canvas_scale_);
 				ImVec2 p4 = ImGui::GetIO().MousePos;
 
-				ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
+                ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
 			case NodesState_DragingOutput:
@@ -418,7 +419,7 @@ namespace ImGui
 				ImVec2 p3 = ImGui::GetIO().MousePos + (ImVec2(-50.0f, 0.0f) * canvas_scale_);
 				ImVec2 p4 = ImGui::GetIO().MousePos;
 
-				ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
+                ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
 			case NodesState_DragingOutputValid:
@@ -921,7 +922,10 @@ namespace ImGui
 								element_.node_ = node.Get();
 								element_.connection_ = connection.get();
 								element_.position_ = node_rect_min + connection->position_;
-							}
+                                //****
+                                // Call subscribe as an input is connected to an output
+                                //****
+                            }
 						}
 					}
 				}
@@ -1016,6 +1020,7 @@ namespace ImGui
 						{
 							element_.state_ = NodesState_DragingInputValid;
 							drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
+                            printf("New  Connection??\n");
 
 							if (!ImGui::IsMouseDown(0))
 							{
@@ -1029,6 +1034,10 @@ namespace ImGui
 								element_.node_ = node.Get();
 								element_.connection_ = connection.get();
 								element_.position_ = node_rect_min + connection->position_;
+
+                                //****
+                                // Call subscribe as an output is connected to an input
+                                //****
 							}
 						}
 					}
@@ -1070,9 +1079,9 @@ namespace ImGui
 	{
 		////////////////////////////////////////////////////////////////////////////////
 		
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
 
 		ImGui::BeginChild("NodesScrollingRegion", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoMove);
 
@@ -1204,7 +1213,7 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 
 		ImGui::EndChild();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(2);
 	}
 }
