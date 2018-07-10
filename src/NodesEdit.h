@@ -399,7 +399,7 @@ namespace ImGui
 
 		void ProcessNodes();
         NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
-        virtual void ConnectionAdded(NodeEditor::Node* src, NodeEditor::Connection* connection) {};
-        virtual void ConnectionDeleted(NodeEditor::Node* src, NodeEditor::Connection* connection) {};
+        virtual void ConnectionAdded(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
+        virtual void ConnectionDeleted(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
     };
 }

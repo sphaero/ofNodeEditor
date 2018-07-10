@@ -912,15 +912,15 @@ namespace ImGui
                                 connection->input_ = cur_node_.connection_;
 								connection->connections_ = 1;
                                 cur_node_.connection_->connections_++;
+                                //****
+                                // Call subscribe as an input is connected to an output
+                                //****
+                                ConnectionAdded(cur_node_.node_, node.Get(), connection.get());
 
                                 cur_node_.Reset(NodeState_HoverIO);
                                 cur_node_.node_ = node.Get();
                                 cur_node_.connection_ = connection.get();
                                 cur_node_.position_ = node_rect_min + connection->position_;
-                                //****
-                                // Call subscribe as an input is connected to an output
-                                //****
-                                ConnectionAdded(node.Get(), connection.get());
                             }
 						}
 					}
@@ -1025,15 +1025,15 @@ namespace ImGui
 
 								connection->connections_++;
 
+                                //****
+                                // Call subscribe as an output is connected to an input
+                                //****
+                                ConnectionAdded(node.Get(), cur_node_.node_,  connection.get());
                                 cur_node_.Reset(NodeState_HoverIO);
                                 cur_node_.node_ = node.Get();
                                 cur_node_.connection_ = connection.get();
                                 cur_node_.position_ = node_rect_min + connection->position_;
 
-                                //****
-                                // Call subscribe as an output is connected to an input
-                                //****
-                                ConnectionAdded(node.Get(), connection.get());
 							}
 						}
 					}
