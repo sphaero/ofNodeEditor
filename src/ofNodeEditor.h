@@ -4,12 +4,13 @@
 #include "ofMain.h"
 #include "NodesEdit.h"
 
-class ofNodeEditor : public ImGui::NodesEdit
+class ofNodeEditor : public ImGui::NodeEditor
 {
 public:
     ofNodeEditor();
 
-    void ConnectionAdded(ImGui::NodesEdit::Connection* connection);
+    void ConnectionAdded(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Connection* connection);
+    void ConnectionDeleted(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Connection* connection);
 };
 
 #endif // OFNODEEDITOR_H

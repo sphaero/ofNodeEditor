@@ -11,18 +11,18 @@
 
 namespace ImGui
 {
-	NodesEdit::NodesEdit()
+    NodeEditor::NodeEditor()
 	{
 		id_ = 0;
 		element_.Reset();
 		canvas_scale_ = 1.0f;
 	}
 
-	NodesEdit::~NodesEdit()
+    NodeEditor::~NodeEditor()
 	{
 	}
 
-	NodesEdit::Node* NodesEdit::GetHoverNode(ImVec2 offset, ImVec2 pos)
+    NodeEditor::Node* NodeEditor::GetHoverNode(ImVec2 offset, ImVec2 pos)
 	{
 		for (auto& node : nodes_)
 		{
@@ -39,7 +39,7 @@ namespace ImGui
 		return nullptr;
 	}
 
-	void NodesEdit::RenderLines(ImDrawList* draw_list, ImVec2 offset)
+    void NodeEditor::RenderLines(ImDrawList* draw_list, ImVec2 offset)
 	{
 		for (auto& node : nodes_)
 		{
@@ -75,13 +75,13 @@ namespace ImGui
 				ImVec2 p2 = p1 + (ImVec2(+50.0f, 0.0f) * canvas_scale_);
 				ImVec2 p3 = p4 + (ImVec2(-50.0f, 0.0f) * canvas_scale_);
 
-				if (element_.state_ == NodesState_Default)
+                if (element_.state_ == NodeState_Default)
 				{
 					const float distance_squared = GetSquaredDistanceToBezierCurve(ImGui::GetIO().MousePos, p1, p2, p3, p4);
 
 					if (distance_squared < (10.0f * 10.0f))
 					{
-						element_.Reset(NodesState_HoverConnection);
+                        element_.Reset(NodeState_HoverConnection);
 
 						element_.rect_ = ImRect
 						(
@@ -95,8 +95,8 @@ namespace ImGui
 				}
 	
 				bool selected = false;
-				selected |= element_.state_ == NodesState_SelectedConnection;
-				selected |= element_.state_ == NodesState_DragingConnection;
+                selected |= element_.state_ == NodeState_SelectedConnection;
+                selected |= element_.state_ == NodeState_DragingConnection;
 				selected &= element_.connection_ == connection.get();
 							
 				draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(0.5f, 0.5f, 0.5f, 1.0f), 2.0f * canvas_scale_);
@@ -109,7 +109,7 @@ namespace ImGui
 		}
 	}
 
-	void NodesEdit::DisplayNodes(ImDrawList* drawList, ImVec2 offset)
+    void NodeEditor::DisplayNodes(ImDrawList* drawList, ImVec2 offset)
 	{
 		ImGui::SetWindowFontScale(canvas_scale_);
 
@@ -121,7 +121,7 @@ namespace ImGui
 		ImGui::SetWindowFontScale(1.0f);
 	}
 
-	NodesEdit::Node* NodesEdit::CreateNodeFromType(ImVec2 pos, const NodeType& type)
+    NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType& type)
 	{
 		auto node = std::make_unique<Node>();
 
@@ -223,7 +223,7 @@ namespace ImGui
 		return nodes_.back().get();
 	}
 
-	void NodesEdit::UpdateScroll()
+    void NodeEditor::UpdateScroll()
 	{
 		////////////////////////////////////////////////////////////////////////////////
 
@@ -299,10 +299,10 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 	}
 
-	void NodesEdit::UpdateState(ImVec2 offset)
+    void NodeEditor::UpdateState(ImVec2 offset)
 	{
         // collapsing nodes
-        if (element_.state_ == NodesState_HoverNode && ImGui::IsMouseDoubleClicked(0))
+        if (element_.state_ == NodeState_HoverNode && ImGui::IsMouseDoubleClicked(0))
 		{		
 			if (element_.node_->state_ < 0)
 			{	// collapsed node goes to full
@@ -318,7 +318,7 @@ namespace ImGui
 
 		switch (element_.state_)
 		{		
-			case NodesState_Default:
+            case NodeState_Default:
             {
 				if (ImGui::IsMouseDown(0) && !ImGui::IsMouseDown(1) && !ImGui::IsMouseDown(2))
 				{
@@ -329,7 +329,7 @@ namespace ImGui
 						break;
 					}
 
-					element_.Reset(NodesState_SelectingEmpty);
+                    element_.Reset(NodeState_SelectingEmpty);
 
                     element_.position_ = ImGui::GetIO().MousePos;
 					element_.rect_.Min = ImGui::GetIO().MousePos;
@@ -338,12 +338,12 @@ namespace ImGui
 			} break;
 
 			// helper: just block all states till next update
-			case NodesState_Block:
+            case NodeState_Block:
 			{
 				element_.Reset(); 
 			} break;
 
-			case NodesState_HoverConnection:
+            case NodeState_HoverConnection:
 			{
 				const float distance_squared = GetSquaredDistanceToBezierCurve
 				(
@@ -362,16 +362,16 @@ namespace ImGui
 
 				if (ImGui::IsMouseDown(0))
 				{
-					element_.state_ = NodesState_SelectedConnection;
+                    element_.state_ = NodeState_SelectedConnection;
 				}
 
 			} break;
 
-			case NodesState_DragingInput:
+            case NodeState_DragingInput:
 			{
 				if (!ImGui::IsMouseDown(0) || ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -383,13 +383,13 @@ namespace ImGui
                 ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
-			case NodesState_DragingInputValid:
+            case NodeState_DragingInputValid:
 			{
-				element_.state_ = NodesState_DragingInput;
+                element_.state_ = NodeState_DragingInput;
 
 				if (ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -401,11 +401,11 @@ namespace ImGui
                 ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
-			case NodesState_DragingOutput:
+            case NodeState_DragingOutput:
 			{
 				if (!ImGui::IsMouseDown(0) || ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -417,13 +417,13 @@ namespace ImGui
                 ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
-			case NodesState_DragingOutputValid:
+            case NodeState_DragingOutputValid:
 			{
-				element_.state_ = NodesState_DragingOutput;
+                element_.state_ = NodeState_DragingOutput;
 
 				if (ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -435,11 +435,11 @@ namespace ImGui
 				ImGui::GetWindowDrawList()->AddBezierCurve(p1, p2, p3, p4, ImColor(0.0f, 1.0f, 0.0f, 1.0f), 2.0f * canvas_scale_);
 			} break;
 
-			case NodesState_SelectingEmpty:
+            case NodeState_SelectingEmpty:
 			{
 				if (!ImGui::IsMouseDown(0))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -447,21 +447,21 @@ namespace ImGui
 				element_.rect_.Max = ImMax(element_.position_, ImGui::GetIO().MousePos);
 			} break;
 
-			case NodesState_SelectingValid:
+            case NodeState_SelectingValid:
 			{
 				if (!ImGui::IsMouseDown(0))
 				{
-					element_.Reset(NodesState_Selected);
+                    element_.Reset(NodeState_Selected);
 					break;
 				}
 
 				element_.rect_.Min = ImMin(element_.position_, ImGui::GetIO().MousePos);
 				element_.rect_.Max = ImMax(element_.position_, ImGui::GetIO().MousePos);
 
-				element_.state_ = NodesState_SelectingEmpty;
+                element_.state_ = NodeState_SelectingEmpty;
 			} break;
 
-			case NodesState_SelectingMore:
+            case NodeState_SelectingMore:
 			{
 				element_.rect_.Min = ImMin(element_.position_, ImGui::GetIO().MousePos);
 				element_.rect_.Max = ImMax(element_.position_, ImGui::GetIO().MousePos);
@@ -491,10 +491,10 @@ namespace ImGui
 					}
 				}
 
-				element_.Reset(NodesState_Selected);
+                element_.Reset(NodeState_Selected);
 			} break;
 
-			case NodesState_Selected:
+            case NodeState_Selected:
 			{
 				// delete all selected nodes
 				if (ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Delete]))
@@ -559,11 +559,11 @@ namespace ImGui
 
 					if (ImGui::GetIO().KeyShift)
 					{
-						element_.state_ = NodesState_SelectingMore;
+                        element_.state_ = NodeState_SelectingMore;
 					}
 					else
 					{
-						element_.state_ = NodesState_SelectingEmpty;
+                        element_.state_ = NodeState_SelectingEmpty;
 					}
 					break;
 				}
@@ -572,7 +572,7 @@ namespace ImGui
 				if (ImGui::GetIO().KeyShift)
 				{
 					hovered->id_ = -abs(hovered->id_);
-					element_.state_ = NodesState_DragingSelected;
+                    element_.state_ = NodeState_DragingSelected;
 					break;
 				}
 
@@ -582,12 +582,12 @@ namespace ImGui
 					if (hovered->id_ > 0)
 					{
 						hovered->id_ = -abs(hovered->id_);
-						element_.state_ = NodesState_DragingSelected;
+                        element_.state_ = NodeState_DragingSelected;
 					}
 					else
 					{
 						hovered->id_ = abs(hovered->id_);
-						element_.state_ = NodesState_Selected;
+                        element_.state_ = NodeState_Selected;
 					}
 					break;
 				}
@@ -595,7 +595,7 @@ namespace ImGui
 				// lets start dragging
 				if (hovered->id_ < 0)
 				{
-					element_.state_ = NodesState_DragingSelected;
+                    element_.state_ = NodeState_DragingSelected;
 					break;
 				}
 				
@@ -609,7 +609,7 @@ namespace ImGui
 				}
 			} break;
 
-			case NodesState_DragingSelected:
+            case NodeState_DragingSelected:
 			{
 				if (!ImGui::IsMouseDown(0))
 				{
@@ -617,15 +617,15 @@ namespace ImGui
 					{
 						if (ImGui::GetIO().KeyShift || ImGui::GetIO().KeyCtrl)
 						{
-							element_.Reset(NodesState_Selected);
+                            element_.Reset(NodeState_Selected);
 							break;
 						}
 
-						element_.state_ = NodesState_HoverNode;
+                        element_.state_ = NodeState_HoverNode;
 					}
 					else
 					{
-						element_.Reset(NodesState_Selected);
+                        element_.Reset(NodeState_Selected);
 					}
 				}
 				else
@@ -640,11 +640,11 @@ namespace ImGui
 				}
 			} break;
 
-			case NodesState_SelectedConnection:
+            case NodeState_SelectedConnection:
 			{
 				if (ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -665,21 +665,21 @@ namespace ImGui
 						break;
 					}
 
-					element_.state_ = NodesState_DragingConnection;
+                    element_.state_ = NodeState_DragingConnection;
 				}
 			} break;
 
-			case NodesState_DragingConnection:
+            case NodeState_DragingConnection:
 			{
 				if (!ImGui::IsMouseDown(0))
 				{
-					element_.state_ = NodesState_SelectedConnection;
+                    element_.state_ = NodeState_SelectedConnection;
 					break;
 				}
 
 				if (ImGui::IsMouseClicked(1))
 				{
-					element_.Reset(NodesState_Block);
+                    element_.Reset(NodeState_Block);
 					break;
 				}
 
@@ -689,7 +689,7 @@ namespace ImGui
 		}
 	}
 
-	void NodesEdit::DisplayNode(ImDrawList* drawList, ImVec2 offset, Node& node)
+    void NodeEditor::DisplayNode(ImDrawList* drawList, ImVec2 offset, Node& node)
 	{
 		ImGui::PushID(abs(node.id_));
 		ImGui::BeginGroup();
@@ -707,33 +707,33 @@ namespace ImGui
 			bool node_hovered = ImGui::IsItemHovered();
 			bool node_active = ImGui::IsItemActive();
 
-			if (node_hovered && element_.state_ == NodesState_HoverNode)
+            if (node_hovered && element_.state_ == NodeState_HoverNode)
 			{
 				element_.node_ = node.Get();
 
 				if (node_active)
 				{
 					node.id_ = -abs(node.id_); // add "selected" flag
-					element_.state_ = NodesState_DragingSelected;
+                    element_.state_ = NodeState_DragingSelected;
 				}
 			}
 
-			if (node_hovered && element_.state_ == NodesState_Default)
+            if (node_hovered && element_.state_ == NodeState_Default)
 			{
 				element_.node_ = node.Get();
 
 				if (node_active)
 				{
 					node.id_ = -abs(node.id_); // add "selected" flag
-					element_.state_ = NodesState_DragingSelected;
+                    element_.state_ = NodeState_DragingSelected;
 				}
 				else
 				{
-					element_.state_ = NodesState_HoverNode;
+                    element_.state_ = NodeState_HoverNode;
 				}
 			}
 
-			if (!node_hovered && element_.state_ == NodesState_HoverNode)
+            if (!node_hovered && element_.state_ == NodeState_HoverNode)
 			{
 				if (element_.node_ == node.Get())
 				{
@@ -748,7 +748,7 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		if (element_.state_ != NodesState_Selected && element_.state_ != NodesState_DragingSelected && element_.state_ != NodesState_SelectingMore)
+        if (element_.state_ != NodeState_Selected && element_.state_ != NodeState_DragingSelected && element_.state_ != NodeState_SelectingMore)
 		{
 			node.id_ = abs(node.id_); // remove "selected" flag
 		}
@@ -756,9 +756,9 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 
 		bool consider_select = false;
-		consider_select |= element_.state_ == NodesState_SelectingEmpty;
-		consider_select |= element_.state_ == NodesState_SelectingValid;
-		consider_select |= element_.state_ == NodesState_SelectingMore;
+        consider_select |= element_.state_ == NodeState_SelectingEmpty;
+        consider_select |= element_.state_ == NodeState_SelectingValid;
+        consider_select |= element_.state_ == NodeState_SelectingMore;
 
 		if (consider_select)
 		{		
@@ -777,10 +777,10 @@ namespace ImGui
 		
 			consider_hover |= select_it;
 
-			if (select_it && element_.state_ != NodesState_SelectingMore)
+            if (select_it && element_.state_ != NodeState_SelectingMore)
 			{
 				node.id_ = -abs(node.id_); // add "selected" flag
-				element_.state_ = NodesState_SelectingValid;
+                element_.state_ = NodeState_SelectingValid;
 			}
 		}
 
@@ -843,14 +843,14 @@ namespace ImGui
 
 				if (IsConnectorHovered(connection_pos, (input_name_size.y / 2.0f)))
 				{
-					consider_io |= element_.state_ == NodesState_Default;
-					consider_io |= element_.state_ == NodesState_HoverConnection;
-					consider_io |= element_.state_ == NodesState_HoverNode;
+                    consider_io |= element_.state_ == NodeState_Default;
+                    consider_io |= element_.state_ == NodeState_HoverConnection;
+                    consider_io |= element_.state_ == NodeState_HoverNode;
 
 					// from nothing to hovered input
 					if (consider_io)
 					{
-						element_.Reset(NodesState_HoverIO);
+                        element_.Reset(NodeState_HoverIO);
 						element_.node_ = node.Get();
 						element_.connection_ = connection.get();
 						element_.position_ = node.position_ + connection->position_;
@@ -859,7 +859,7 @@ namespace ImGui
 					// we could start draging input now
 					if (ImGui::IsMouseClicked(0) && element_.connection_ == connection.get())
 					{
-						element_.state_ = NodesState_DragingInput;
+                        element_.state_ = NodeState_DragingInput;
 
 						// remove connection from this input
 						if (connection->input_)
@@ -874,7 +874,7 @@ namespace ImGui
 
 					consider_io = true;
 				}
-				else if (element_.state_ == NodesState_HoverIO && element_.connection_ == connection.get())
+                else if (element_.state_ == NodeState_HoverIO && element_.connection_ == connection.get())
 				{
 					element_.Reset(); // we are not hovering this last hovered input anymore
 				}
@@ -889,7 +889,7 @@ namespace ImGui
 				}
 
 				// currently we are dragin some output, check if there is a possibilty to connect here (this input)
-				if (element_.state_ == NodesState_DragingOutput || element_.state_ == NodesState_DragingOutputValid)
+                if (element_.state_ == NodeState_DragingOutput || element_.state_ == NodeState_DragingOutputValid)
 				{
 					// check is draging output are not from the same node
 					if (element_.node_ != node.Get() && element_.connection_->type_ == connection->type_)
@@ -898,7 +898,7 @@ namespace ImGui
 
 						if (consider_io)
 						{
-							element_.state_ = NodesState_DragingOutputValid;
+                            element_.state_ = NodeState_DragingOutputValid;
 							drawList->AddCircleFilled(connection_pos, (input_name_size.y / 3.0f), color);
 
 							if (!ImGui::IsMouseDown(0))
@@ -913,29 +913,29 @@ namespace ImGui
 								connection->connections_ = 1;
 								element_.connection_->connections_++;
 
-								element_.Reset(NodesState_HoverIO);
+                                element_.Reset(NodeState_HoverIO);
 								element_.node_ = node.Get();
 								element_.connection_ = connection.get();
 								element_.position_ = node_rect_min + connection->position_;
                                 //****
                                 // Call subscribe as an input is connected to an output
                                 //****
-                                ConnectionAdded(connection.get());
+                                ConnectionAdded(node.Get(), connection.get());
                             }
 						}
 					}
 				}
 
-				consider_io |= element_.state_ == NodesState_HoverIO;
-				consider_io |= element_.state_ == NodesState_DragingInput;
-				consider_io |= element_.state_ == NodesState_DragingInputValid;
+                consider_io |= element_.state_ == NodeState_HoverIO;
+                consider_io |= element_.state_ == NodeState_DragingInput;
+                consider_io |= element_.state_ == NodeState_DragingInputValid;
 				consider_io &= element_.connection_ == connection.get();
 
 				if (consider_io)
 				{
 					color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
 
-					if (element_.state_ != NodesState_HoverIO)
+                    if (element_.state_ != NodeState_HoverIO)
 					{
 						drawList->AddCircleFilled(connection_pos, (input_name_size.y / 3.0f), color);
 					}
@@ -969,14 +969,14 @@ namespace ImGui
 
 				if (IsConnectorHovered(connection_pos, (output_name_size.y / 2.0f)))
 				{
-					consider_io |= element_.state_ == NodesState_Default;
-					consider_io |= element_.state_ == NodesState_HoverConnection;
-					consider_io |= element_.state_ == NodesState_HoverNode;
+                    consider_io |= element_.state_ == NodeState_Default;
+                    consider_io |= element_.state_ == NodeState_HoverConnection;
+                    consider_io |= element_.state_ == NodeState_HoverNode;
 
 					// from nothing to hovered output
 					if (consider_io)
 					{
-						element_.Reset(NodesState_HoverIO);
+                        element_.Reset(NodeState_HoverIO);
 						element_.node_ = node.Get();
 						element_.connection_ = connection.get();
 						element_.position_ = node.position_ + connection->position_;
@@ -985,12 +985,12 @@ namespace ImGui
 					// we could start draging output now
 					if (ImGui::IsMouseClicked(0) && element_.connection_ == connection.get())
 					{
-						element_.state_ = NodesState_DragingOutput;
+                        element_.state_ = NodeState_DragingOutput;
 					}
 
 					consider_io = true;
 				}
-				else if (element_.state_ == NodesState_HoverIO && element_.connection_ == connection.get())
+                else if (element_.state_ == NodeState_HoverIO && element_.connection_ == connection.get())
 				{
 					element_.Reset(); // we are not hovering this last hovered output anymore
 				}
@@ -1005,7 +1005,7 @@ namespace ImGui
 				}
 
 				// currently we are dragin some input, check if there is a possibilty to connect here (this output)
-				if (element_.state_ == NodesState_DragingInput || element_.state_ == NodesState_DragingInputValid)
+                if (element_.state_ == NodeState_DragingInput || element_.state_ == NodeState_DragingInputValid)
 				{
 					// check is draging input are not from the same node
 					if (element_.node_ != node.Get() && element_.connection_->type_ == connection->type_)
@@ -1014,7 +1014,7 @@ namespace ImGui
 
 						if (consider_io)
 						{
-							element_.state_ = NodesState_DragingInputValid;
+                            element_.state_ = NodeState_DragingInputValid;
 							drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
 
 							if (!ImGui::IsMouseDown(0))
@@ -1025,7 +1025,7 @@ namespace ImGui
 
 								connection->connections_++;
 
-								element_.Reset(NodesState_HoverIO);
+                                element_.Reset(NodeState_HoverIO);
 								element_.node_ = node.Get();
 								element_.connection_ = connection.get();
 								element_.position_ = node_rect_min + connection->position_;
@@ -1033,22 +1033,22 @@ namespace ImGui
                                 //****
                                 // Call subscribe as an output is connected to an input
                                 //****
-                                ConnectionAdded(connection.get());
+                                ConnectionAdded(node.Get(), connection.get());
 							}
 						}
 					}
 				}
 
-				consider_io |= element_.state_ == NodesState_HoverIO;
-				consider_io |= element_.state_ == NodesState_DragingOutput;
-				consider_io |= element_.state_ == NodesState_DragingOutputValid;
+                consider_io |= element_.state_ == NodeState_HoverIO;
+                consider_io |= element_.state_ == NodeState_DragingOutput;
+                consider_io |= element_.state_ == NodeState_DragingOutputValid;
 				consider_io &= element_.connection_ == connection.get();
 
 				if (consider_io)
 				{
 					color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
 
-					if (element_.state_ != NodesState_HoverIO)
+                    if (element_.state_ != NodeState_HoverIO)
 					{
 						drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
 					}
@@ -1071,7 +1071,7 @@ namespace ImGui
 		ImGui::PopID();
 	}
 
-	void NodesEdit::ProcessNodes()
+    void NodeEditor::ProcessNodes()
 	{
 		////////////////////////////////////////////////////////////////////////////////
 		
@@ -1121,7 +1121,7 @@ namespace ImGui
 		RenderLines(draw_list, offset);
 		DisplayNodes(draw_list, offset);
 
-		if (element_.state_ == NodesState_SelectingEmpty || element_.state_ == NodesState_SelectingValid || element_.state_ == NodesState_SelectingMore)
+        if (element_.state_ == NodeState_SelectingEmpty || element_.state_ == NodeState_SelectingValid || element_.state_ == NodeState_SelectingMore)
 		{
             draw_list->AddRectFilled(element_.rect_.Min, element_.rect_.Max, ImColor(200.0f, 200.0f, 0.0f, 0.1f));
             draw_list->AddRect(element_.rect_.Min, element_.rect_.Max, ImColor(200.0f, 200.0f, 0.0f, 0.5f));
@@ -1134,7 +1134,7 @@ namespace ImGui
 
 			bool consider_menu = !ImGui::IsAnyItemHovered();
 			consider_menu &= ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
-			consider_menu &= element_.state_ == NodesState_Default || element_.state_ == NodesState_Selected;
+            consider_menu &= element_.state_ == NodeState_Default || element_.state_ == NodeState_Selected;
 			consider_menu &= ImGui::IsMouseReleased(1);		
 			
 			if (consider_menu)
@@ -1150,7 +1150,7 @@ namespace ImGui
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
 			if (ImGui::BeginPopup("NodesContextMenu"))
 			{
-				element_.Reset(NodesState_Block);
+                element_.Reset(NodeState_Block);
 
 				for (auto& node : nodes_types_)
 				{
@@ -1172,22 +1172,22 @@ namespace ImGui
 
             switch (element_.state_)
             {
-                case NodesState_Default: ImGui::Text("NodesState_Default"); break;
-                case NodesState_Block: ImGui::Text("NodesState_Block"); break;
-                case NodesState_HoverIO: ImGui::Text("NodesState_HoverIO"); break;
-                case NodesState_HoverConnection: ImGui::Text("NodesState_HoverConnection"); break;
-                case NodesState_HoverNode: ImGui::Text("NodesState_HoverNode"); break;
-                case NodesState_DragingInput: ImGui::Text("NodesState_DragingInput"); break;
-                case NodesState_DragingInputValid: ImGui::Text("NodesState_DragingInputValid"); break;
-                case NodesState_DragingOutput: ImGui::Text("NodesState_DragingOutput"); break;
-                case NodesState_DragingOutputValid: ImGui::Text("NodesState_DragingOutputValid"); break;
-                case NodesState_DragingConnection: ImGui::Text("NodesState_DragingConnection"); break;
-                case NodesState_DragingSelected: ImGui::Text("NodesState_DragingSelected"); break;
-                case NodesState_SelectingEmpty: ImGui::Text("NodesState_SelectingEmpty"); break;
-                case NodesState_SelectingValid: ImGui::Text("NodesState_SelectingValid"); break;
-                case NodesState_SelectingMore: ImGui::Text("NodesState_SelectingMore"); break;
-                case NodesState_Selected: ImGui::Text("NodesState_Selected"); break;
-                case NodesState_SelectedConnection: ImGui::Text("NodesState_SelectedConnection"); break;
+                case NodeState_Default: ImGui::Text("NodeState_Default"); break;
+                case NodeState_Block: ImGui::Text("NodeState_Block"); break;
+                case NodeState_HoverIO: ImGui::Text("NodeState_HoverIO"); break;
+                case NodeState_HoverConnection: ImGui::Text("NodeState_HoverConnection"); break;
+                case NodeState_HoverNode: ImGui::Text("NodeState_HoverNode"); break;
+                case NodeState_DragingInput: ImGui::Text("NodeState_DragingInput"); break;
+                case NodeState_DragingInputValid: ImGui::Text("NodeState_DragingInputValid"); break;
+                case NodeState_DragingOutput: ImGui::Text("NodeState_DragingOutput"); break;
+                case NodeState_DragingOutputValid: ImGui::Text("NodeState_DragingOutputValid"); break;
+                case NodeState_DragingConnection: ImGui::Text("NodeState_DragingConnection"); break;
+                case NodeState_DragingSelected: ImGui::Text("NodeState_DragingSelected"); break;
+                case NodeState_SelectingEmpty: ImGui::Text("NodeState_SelectingEmpty"); break;
+                case NodeState_SelectingValid: ImGui::Text("NodeState_SelectingValid"); break;
+                case NodeState_SelectingMore: ImGui::Text("NodeState_SelectingMore"); break;
+                case NodeState_Selected: ImGui::Text("NodeState_Selected"); break;
+                case NodeState_SelectedConnection: ImGui::Text("NodeState_SelectedConnection"); break;
                 default: ImGui::Text("UNKNOWN"); break;
             }
 

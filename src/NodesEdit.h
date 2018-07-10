@@ -25,6 +25,7 @@ namespace ImGui
 		ConnectionType_None = 0,
         ConnectionType_Float,
         ConnectionType_Int,
+        ConnectionType_String,
         ConnectionType_Vec2,
         ConnectionType_Vec3,
         ConnectionType_Vec4,
@@ -82,6 +83,13 @@ namespace ImGui
                 { std::string("Skeletons"), ImGui::ConnectionType_OSC }
             }
 		},
+        {
+            { std::string("OSCSender") },
+            {
+               { std::string("Data"), ImGui::ConnectionType_OSC },
+               { std::string("Host"), ImGui::ConnectionType_String }
+            }
+        },
         ////////////////////////////////////////////////////////////////////////////////
         {
             { std::string("Test") },
@@ -144,12 +152,32 @@ namespace ImGui
 
 	////////////////////////////////////////////////////////////////////////////////
 
-    class NodesEdit
+    class NodeEditor
 	{
     protected:
 		////////////////////////////////////////////////////////////////////////////////
 
         struct Node;
+
+        struct NodePad
+        {
+            ImVec2 position;        // position in node canvas
+            std::string name;       // human readable name
+            ConnectionType type;   // type of data
+            std::string access;     // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
+            Node* owner;            // owner of the pad
+            //subscriptions todo
+
+            //constructor
+            NodePad()
+            {
+                position = ImVec2(0.0f, 0.0f);
+                type = ConnectionType_None;
+                name = std::string("noname");
+                access = std::string("r");
+                owner = nullptr;
+            }
+        };
 
         struct Connection
 		{
@@ -220,29 +248,29 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		enum NodesState : uint32_t
+        enum NodeState : uint32_t
 		{
-			NodesState_Default = 0,
-			NodesState_Block, // helper: just block all states till next update (frame)
-			NodesState_HoverIO,
-			NodesState_HoverConnection,
-			NodesState_HoverNode,
-			NodesState_DragingInput,
-			NodesState_DragingInputValid,
-			NodesState_DragingOutput,
-			NodesState_DragingOutputValid,
-			NodesState_DragingConnection,
-			NodesState_DragingSelected,
-			NodesState_SelectingEmpty,
-			NodesState_SelectingValid,
-			NodesState_SelectingMore,
-			NodesState_Selected,
-			NodesState_SelectedConnection
+            NodeState_Default = 0,
+            NodeState_Block, // helper: just block all states till next update (frame)
+            NodeState_HoverIO,
+            NodeState_HoverConnection,
+            NodeState_HoverNode,
+            NodeState_DragingInput,
+            NodeState_DragingInputValid,
+            NodeState_DragingOutput,
+            NodeState_DragingOutputValid,
+            NodeState_DragingConnection,
+            NodeState_DragingSelected,
+            NodeState_SelectingEmpty,
+            NodeState_SelectingValid,
+            NodeState_SelectingMore,
+            NodeState_Selected,
+            NodeState_SelectedConnection
 		};
 
 		struct NodesElement
 		{
-			NodesState state_;
+            NodeState state_;
 
 			ImVec2 position_;
 			ImRect rect_;
@@ -250,7 +278,7 @@ namespace ImGui
 			Node* node_;
             Connection* connection_;
 
-			void Reset(NodesState state = NodesState_Default)
+            void Reset(NodeState state = NodeState_Default)
 			{
 				state_ = state;
 
@@ -363,12 +391,12 @@ namespace ImGui
         ////////////////////////////////////////////////////////////////////////////////
 
 	public:
-		explicit NodesEdit();
-		~NodesEdit();
+        explicit NodeEditor();
+        ~NodeEditor();
 
 		void ProcessNodes();
-        NodesEdit::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
-        virtual void ConnectionAdded(NodesEdit::Connection* connection ) {};
-        virtual void ConnectionDeleted(NodesEdit::Connection* connection ) {};
+        NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
+        virtual void ConnectionAdded(NodeEditor::Node* src, NodeEditor::Connection* connection) {};
+        virtual void ConnectionDeleted(NodeEditor::Node* src, NodeEditor::Connection* connection) {};
     };
 }
