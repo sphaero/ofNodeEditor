@@ -161,12 +161,13 @@ namespace ImGui
 
         struct NodePad
         {
-            ImVec2 position;        // position in node canvas
-            std::string name;       // human readable name
-            ConnectionType type;   // type of data
-            std::string access;     // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
-            Node* owner;            // owner of the pad
-            //subscriptions todo
+            ImVec2 position;            // position in node canvas
+            std::string name;           // human readable name
+            ConnectionType type;        // type of data
+            std::string access;         // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
+            //TODO: std::string widget_type   // type of widget for the gui
+            Node* owner;                // owner of the pad
+            //TODO: std::set<NodePad*> subscriptions; // list of subscriptions (only used  for output pads)
 
             //constructor
             NodePad()
@@ -176,6 +177,8 @@ namespace ImGui
                 name = std::string("noname");
                 access = std::string("r");
                 owner = nullptr;
+                //widget_type = std::string("default");
+                //subscriptions = std::set<NodePad*>();
             }
         };
 
@@ -268,7 +271,7 @@ namespace ImGui
             NodeState_SelectedConnection
 		};
 
-		struct NodesElement
+        struct currentNode
 		{
             NodeState state_;
 
@@ -295,7 +298,7 @@ namespace ImGui
 		std::vector<std::unique_ptr<Node>> nodes_;
 
 		int32_t id_;
-		NodesElement element_;
+        currentNode cur_node_;
 		
 		ImVec2 canvas_mouse_;
 		ImVec2 canvas_position_;
