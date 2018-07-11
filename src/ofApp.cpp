@@ -14,7 +14,7 @@ void ofApp::setup(){
     io.Fonts->AddFontFromFileTTF("/home/arnaud/src/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
     gui.setup();
     gui.begin();
-    nodes.CreateNodeFromType(ImVec2(400,140), ImGui::nodes_types_[0]);
+    nodes.CreateNodeFromType(ImVec2(400,140), ImGui::nodes_types2[0]);
     gui.end();
 }
 

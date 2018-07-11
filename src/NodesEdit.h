@@ -41,6 +41,19 @@ namespace ImGui
 		std::vector<std::pair<std::string, ConnectionType>> outputs_;
 	};
 
+    struct NodePadType
+    {
+        std::string name;
+        std::string access;
+        std::string format;
+    };
+
+    struct NodeType2
+    {
+        std::string name;
+        std::vector<NodePadType> pads;
+    };
+
 	template<int n>
 	struct BezierWeights
 	{
@@ -67,6 +80,19 @@ namespace ImGui
 	static constexpr auto bezier_weights_ = BezierWeights<16>();
 
 	////////////////////////////////////////////////////////////////////////////////
+    static const std::vector<ImGui::NodeType2> nodes_types2 =
+    {
+        ////////////////////////////////////////////////////////////////////////////////
+        {
+            { std::string("MOCAPBridge") },
+
+            {
+                { std::string("Trigger"), std::string("sw"), std::string("f") },
+                { std::string("Markers"), std::string("re"), std::string("f") },
+                { std::string("Skeleton"), std::string("re"), std::string("f") }
+            }
+        }
+    };
 
 	static const std::vector<ImGui::NodeType> nodes_types_=
 	{
@@ -164,10 +190,13 @@ namespace ImGui
             ImVec2 position;            // position in node canvas
             std::string name;           // human readable name
             ConnectionType type;        // type of data
-            std::string access;         // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
             //TODO: std::string widget_type   // type of widget for the gui
+            std::string access;         // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
+            std::string format;
             Node* owner;                // owner of the pad
             //TODO: std::set<NodePad*> subscriptions; // list of subscriptions (only used  for output pads)
+
+            uint32_t connections_;
 
             //constructor
             NodePad()
@@ -176,10 +205,24 @@ namespace ImGui
                 type = ConnectionType_None;
                 name = std::string("noname");
                 access = std::string("r");
+                format = std::string("f");
                 owner = nullptr;
                 //widget_type = std::string("default");
                 //subscriptions = std::set<NodePad*>();
+
+                connections_ = 0;
             }
+
+            NodePad* Get() {
+
+                return this;
+            }
+        };
+
+        struct NodePadLink
+        {
+            NodePad* source;
+            NodePad* sink;
         };
 
         struct Connection
@@ -228,6 +271,7 @@ namespace ImGui
             float full_height;
 
             std::string name_;
+            std::vector<std::unique_ptr<NodePad>> pads;
             std::vector<std::unique_ptr<Connection>> inputs_;
             std::vector<std::unique_ptr<Connection>> outputs_;
 
@@ -279,7 +323,8 @@ namespace ImGui
 			ImRect rect_;
 
 			Node* node_;
-            Connection* connection_;
+            NodePad* connection_;
+            NodePadLink* link;
 
             void Reset(NodeState state = NodeState_Default)
 			{
@@ -296,6 +341,7 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 
 		std::vector<std::unique_ptr<Node>> nodes_;
+        std::vector<std::unique_ptr<NodePadLink>> nodes_links;
 
 		int32_t id_;
         currentNode cur_node_;
@@ -398,7 +444,7 @@ namespace ImGui
         ~NodeEditor();
 
 		void ProcessNodes();
-        NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
+        NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType2& type);
         virtual void ConnectionAdded(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
         virtual void ConnectionDeleted(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
     };

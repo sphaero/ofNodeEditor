@@ -41,7 +41,8 @@ namespace ImGui
 
     void NodeEditor::RenderLines(ImDrawList* draw_list, ImVec2 offset)
 	{
-		for (auto& node : nodes_)
+        return; // TODO iterate the pads vector?
+        /*for (auto& node : nodes_)
 		{
 			for (auto& connection : node->inputs_)
 			{
@@ -106,7 +107,7 @@ namespace ImGui
 					draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 1.0f, 0.25f), 4.0f * canvas_scale_);
 				}
 			}
-		}
+        }*/
 	}
 
     void NodeEditor::DisplayNodes(ImDrawList* drawList, ImVec2 offset)
@@ -121,41 +122,27 @@ namespace ImGui
 		ImGui::SetWindowFontScale(1.0f);
 	}
 
-    NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType& type)
+    NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType2& type)
 	{
 		auto node = std::make_unique<Node>();
 
 		////////////////////////////////////////////////////////////////////////////////
 		
 		node->id_ = -++id_;
-		node->name_ = type.name_ + std::to_string(id_).c_str();
+        node->name_ = type.name + std::to_string(id_).c_str();
 		node->position_ = pos;
 
 		{
-			auto &inputs = node->inputs_;
-            std::for_each( type.inputs_.begin(), type.inputs_.end(), [&inputs](auto& element)
+            std::vector<NodePadType>::const_iterator it = type.pads.begin();
+            while (it != type.pads.end())
             {
-                auto connection = std::make_unique<Connection>();
-                connection->name_ = element.first;
-                connection->type_ = element.second;
-
-                inputs.push_back(std::move(connection));
-            });
-
-			auto &outputs = node->outputs_;
-			std::for_each
-			(
-				type.outputs_.begin(),
-				type.outputs_.end(),
-				[&outputs](auto& element)
-				{
-					auto connection = std::make_unique<Connection>();
-					connection->name_ = element.first;
-					connection->type_ = element.second;
-			
-					outputs.push_back(std::move(connection));
-				}
-			);
+                auto pad = std::make_unique<NodePad>();
+                pad->name = it->name;
+                pad->access = it->access;
+                pad->format = it->format;
+                node->pads.push_back(std::move(pad));
+                ++it;
+            }
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -166,29 +153,21 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		ImVec2 inputs_size;
-		for (auto& connection : node->inputs_)
+        ImVec2 pads_size;
+        for (auto& pad : node->pads)
 		{
-			ImVec2 name_size = ImGui::CalcTextSize(connection->name_.c_str());
-			inputs_size.x = ImMax(inputs_size.x, name_size.x);
-			inputs_size.y += name_size.y * vertical_padding;
-		}
-		
-		ImVec2 outputs_size;
-		for (auto& connection : node->outputs_)
-		{
-			ImVec2 name_size = ImGui::CalcTextSize(connection->name_.c_str());
-			outputs_size.x = ImMax(outputs_size.x, name_size.x);
-			outputs_size.y += name_size.y * vertical_padding;
+            ImVec2 name_size = ImGui::CalcTextSize(pad->name.c_str());
+            pads_size.x = ImMax(pads_size.x, name_size.x);
+            pads_size.y += name_size.y * vertical_padding;
 		}
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		node->size_.x = ImMax((inputs_size.x + outputs_size.x), title_size.x);
+        node->size_.x = ImMax(pads_size.x, title_size.x);
 		node->size_.x += title_size.y * 6.0f;
 
 		node->collapsed_height = (title_size.y * 2.0f);
-		node->full_height = (title_size.y * 3.0f) + ImMax(inputs_size.y, outputs_size.y);
+        node->full_height = (title_size.y * 3.0f) + pads_size.y;
 
 		node->size_.y = node->full_height;
 		
@@ -197,24 +176,15 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 
         // we place node connection sockets on the border of the node widget with an offset of 2px
-        inputs_size = ImVec2(2, title_size.y * 2.5f);
-		for (auto& connection : node->inputs_)
+        pads_size = ImVec2(2, title_size.y * 2.5f);
+        for (auto& pad : node->pads)
 		{
-			const float half = ((ImGui::CalcTextSize(connection->name_.c_str()).y * vertical_padding) / 2.0f);
+            //input pads
+            const float half = ((ImGui::CalcTextSize(pad->name.c_str()).y * vertical_padding) / 2.0f);
 
-			inputs_size.y += half;
-            connection->position_ = ImVec2(inputs_size.x, inputs_size.y);
-			inputs_size.y += half;
-		}
-
-        outputs_size = ImVec2(node->size_.x-2, title_size.y * 2.5f);
-		for (auto& connection : node->outputs_)
-		{
-			const float half = ((ImGui::CalcTextSize(connection->name_.c_str()).y * vertical_padding) / 2.0f);
-
-			outputs_size.y += half;
-			connection->position_ = ImVec2(outputs_size.x, outputs_size.y);
-			outputs_size.y += half;
+            pads_size.y += half;
+            pad->position = ImVec2(pads_size.x, pads_size.y);
+            pads_size.y += half;
 		}
 	
 		////////////////////////////////////////////////////////////////////////////////
@@ -503,26 +473,27 @@ namespace ImGui
 					replacement.reserve(nodes_.size());
 
 					// delete connections
+                    // todo iterate the nodepadlink vector instead of nodes vector???
 					for (auto& node : nodes_)
 					{	
-						for (auto& connection : node->inputs_)
+                        for (auto& pad : node->pads)
 						{
-							if (connection->connections_ == 0)
+                            if (pad->connections_ == 0)
 							{
 								continue;
 							}
 
-							if (node->id_ < 0)
-							{
-								connection->input_->connections_--;
-							}
+                            //if (node->id_ < 0)
+                            //{ not sure what todo, this decreases the connection counter at the input nodepad
+                            //	pad->input_->connections_--;
+                            //}
 							
-							if (connection->target_->id_ <0)
-							{
-								connection->target_ = nullptr;
-								connection->input_ = nullptr;
-								connection->connections_ = 0;
-							}
+                            //if (pad->target_->id_ <0)
+                            //{
+                            //	pad->target_ = nullptr;
+                            //	pad->input_ = nullptr;
+                            //	pad->connections_ = 0;
+                            //}
 						}
 					}
 
@@ -684,7 +655,8 @@ namespace ImGui
 				}
 
                 cur_node_.node_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
-                cur_node_.connection_->target_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
+                // todo: only used to draw a bezier using mouse pos so don't do this in the struct?
+                //cur_node_.connection_->target_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
 			} break;
 		}
 	}
@@ -821,133 +793,237 @@ namespace ImGui
 		{
 			////////////////////////////////////////////////////////////////////////////////
 
-			for (auto& connection : node.inputs_)
+            for (auto& pad : node.pads)
 			{
-				if (connection->type_ == ConnectionType_None)
+                if (pad->format.empty() ) // if empty string
 				{
 					continue;
 				}
 
 				bool consider_io = false;
 
-				ImVec2 input_name_size = ImGui::CalcTextSize(connection->name_.c_str());
-                ImVec2 connection_pos = node_rect_min + (connection->position_ * canvas_scale_);
+                ImVec2 input_name_size = ImGui::CalcTextSize(pad->name.c_str());
+                ImVec2 pad_pos = node_rect_min + (pad->position * canvas_scale_);
 
-				{
-					ImVec2 pos = connection_pos;
+                {
+                    ImVec2 pos = pad_pos;
                     pos += ImVec2(input_name_size.y * 0.75f, -input_name_size.y / 2.0f);
 
-					ImGui::SetCursorScreenPos(pos);
-					ImGui::Text("%s", connection->name_.c_str());
-				}
+                    ImGui::SetCursorScreenPos(pos);
+                    ImGui::Text("%s", pad->name.c_str());
+                }
 
-				if (IsConnectorHovered(connection_pos, (input_name_size.y / 2.0f)))
-				{
-                    consider_io |= cur_node_.state_ == NodeState_Default;
-                    consider_io |= cur_node_.state_ == NodeState_HoverConnection;
-                    consider_io |= cur_node_.state_ == NodeState_HoverNode;
+                if ( pad->access.find('w') != std::string::npos ) // string contains 'r'
+                {
+                    // TODO: rename to pad...
+                    float pad_radius = input_name_size.y/2.f;
+                    if ( IsConnectorHovered(pad_pos, pad_radius) )
+                    {
+                        consider_io |= cur_node_.state_ == NodeState_Default;
+                        consider_io |= cur_node_.state_ == NodeState_HoverConnection;
+                        consider_io |= cur_node_.state_ == NodeState_HoverNode;
 
-					// from nothing to hovered input
-					if (consider_io)
-					{
-                        cur_node_.Reset(NodeState_HoverIO);
-                        cur_node_.node_ = node.Get();
-                        cur_node_.connection_ = connection.get();
-                        cur_node_.position_ = node.position_ + connection->position_;
-					}
+                        // from nothing to hovered input
+                        if (consider_io)
+                        {
+                            cur_node_.Reset(NodeState_HoverIO);
+                            cur_node_.node_ = node.Get();
+                            cur_node_.connection_ = pad.get();
+                            cur_node_.position_ = node.position_ + pad->position;
+                        }
 
-                    // we could start Dragging input now
-                    if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == connection.get())
-					{
-                        cur_node_.state_ = NodeState_DraggingInput;
+                        // we could start Dragging input now
+                        if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == pad.get())
+                        {
+                            cur_node_.state_ = NodeState_DraggingInput;
 
-						// remove connection from this input
-						if (connection->input_)
-						{
-							connection->input_->connections_--;
-						}
-
-						connection->target_ = nullptr;
-						connection->input_ = nullptr;
-						connection->connections_ = 0;
-					}
-
-					consider_io = true;
-				}
-                else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == connection.get())
-				{
-                    cur_node_.Reset(); // we are not hovering this last hovered input anymore
-				}
-
-				////////////////////////////////////////////////////////////////////////////////
-
-				ImColor color = ImColor(0.5f, 0.5f, 0.5f, 1.0f);
-
-				if (connection->connections_ > 0)
-				{
-                    drawList->AddCircleFilled(connection_pos, (input_name_size.y / 3.0f), color);
-				}
-
-				// currently we are dragin some output, check if there is a possibilty to connect here (this input)
-                if (cur_node_.state_ == NodeState_DraggingOutput || cur_node_.state_ == NodeState_DraggingOutputValid)
-				{
-                    // check is dragging output are not from the same node
-                    if (cur_node_.node_ != node.Get() && cur_node_.connection_->type_ == connection->type_)
-					{
-						color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
-
-						if (consider_io)
-						{
-                            cur_node_.state_ = NodeState_DraggingOutputValid;
-							drawList->AddCircleFilled(connection_pos, (input_name_size.y / 3.0f), color);
-
-							if (!ImGui::IsMouseDown(0))
-							{
-								if (connection->input_)
-								{
-									connection->input_->connections_--;
-								}
-
-                                connection->target_ = cur_node_.node_;
-                                connection->input_ = cur_node_.connection_;
-								connection->connections_ = 1;
-                                cur_node_.connection_->connections_++;
-                                //****
-                                // Call subscribe as an input is connected to an output
-                                //****
-                                ConnectionAdded(cur_node_.node_, node.Get(), connection.get());
-
-                                cur_node_.Reset(NodeState_HoverIO);
-                                cur_node_.node_ = node.Get();
-                                cur_node_.connection_ = connection.get();
-                                cur_node_.position_ = node_rect_min + connection->position_;
+                            // remove connection from this input
+                            /* TODO this needs to be done differently in order to  allow multiple links
+                            if (pad->input_)
+                            {
+                                pad->input_->connections_--;
                             }
-						}
-					}
-				}
 
-                consider_io |= cur_node_.state_ == NodeState_HoverIO;
-                consider_io |= cur_node_.state_ == NodeState_DraggingInput;
-                consider_io |= cur_node_.state_ == NodeState_DraggingInputValid;
-                consider_io &= cur_node_.connection_ == connection.get();
+                            connection->target_ = nullptr;
+                            connection->input_ = nullptr;
+                            connection->connections_ = 0;
+                            */
+                        }
 
-				if (consider_io)
-				{
-					color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
+                        consider_io = true;
+                    }
+                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == pad.get())
+                    {
+                        cur_node_.Reset(); // we are not hovering this last hovered input anymore
+                    }
 
-                    if (cur_node_.state_ != NodeState_HoverIO)
-					{
-						drawList->AddCircleFilled(connection_pos, (input_name_size.y / 3.0f), color);
-					}
-				}
+                    ////////////////////////////////////////////////////////////////////////////////
 
-                drawList->AddCircle(connection_pos, (input_name_size.y / 3.0f), color, ((int)(6.0f * canvas_scale_) + 10), (1.5f * canvas_scale_));
-			}
-            //drawList->AddRect(node_rect_min, node_rect_max, IM_COL32_WHITE);
+                    ImColor color = ImColor(0.5f, 0.5f, 0.5f, 1.0f);
+
+                    if (pad->connections_ > 0)
+                    {
+                        drawList->AddCircleFilled(pad_pos, (input_name_size.y / 3.0f), color);
+                    }
+
+                    // currently we are draggin some output, check if there is a possibilty to connect here (this input)
+                    if (cur_node_.state_ == NodeState_DraggingOutput || cur_node_.state_ == NodeState_DraggingOutputValid)
+                    {
+                        // check is dragging output are not from the same node
+                        if (cur_node_.node_ != node.Get() && cur_node_.connection_->type == pad->type)
+                        {
+                            color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
+
+                            if (consider_io)
+                            {
+                                cur_node_.state_ = NodeState_DraggingOutputValid;
+                                drawList->AddCircleFilled(pad_pos, (input_name_size.y / 3.0f), color);
+
+                                if (!ImGui::IsMouseDown(0))
+                                {
+                                    /* TODO use NodePadLinks
+                                    if (pad->input_)
+                                    {
+                                        connection->input_->connections_--;
+                                    }
+
+                                    connection->target_ = cur_node_.node_;
+                                    connection->input_ = cur_node_.connection_;
+                                    connection->connections_ = 1;
+                                    cur_node_.connection_->connections_++;
+                                    //****
+                                    // Call subscribe as an input is connected to an output
+                                    //****
+                                    ConnectionAdded(cur_node_.node_, node.Get(), connection.get());
+                                    */
+                                    cur_node_.Reset(NodeState_HoverIO);
+                                    cur_node_.node_ = node.Get();
+                                    cur_node_.connection_ = pad.get();
+                                    cur_node_.position_ = node_rect_min + pad->position;
+                                }
+                            }
+                        }
+                    }
+
+                    consider_io |= cur_node_.state_ == NodeState_HoverIO;
+                    consider_io |= cur_node_.state_ == NodeState_DraggingInput;
+                    consider_io |= cur_node_.state_ == NodeState_DraggingInputValid;
+                    consider_io &= cur_node_.connection_ == pad.get();
+
+                    if (consider_io)
+                    {
+                        color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
+
+                        if (cur_node_.state_ != NodeState_HoverIO)
+                        {
+                            drawList->AddCircleFilled(pad_pos, (input_name_size.y / 3.0f), color);
+                        }
+                    }
+
+                    drawList->AddCircle(pad_pos, (input_name_size.y / 3.0f), color, ((int)(6.0f * canvas_scale_) + 10), (1.5f * canvas_scale_));
+                }
+
+                if ( pad->access.find_first_of('r') != std::string::npos ) // string contains 'w'
+                {
+                    ImVec2 pad_output_pos = pad_pos;
+                    pad_output_pos.x += (node.size_.x-4) * canvas_scale_; //position with 2px inward correction
+
+                    if (IsConnectorHovered(pad_output_pos, (input_name_size.y / 2.0f)))
+                    {
+                        consider_io |= cur_node_.state_ == NodeState_Default;
+                        consider_io |= cur_node_.state_ == NodeState_HoverConnection;
+                        consider_io |= cur_node_.state_ == NodeState_HoverNode;
+
+                        // from nothing to hovered output
+                        if (consider_io)
+                        {
+                            cur_node_.Reset(NodeState_HoverIO);
+                            cur_node_.node_ = node.Get();
+                            cur_node_.connection_ = pad.get();
+                            cur_node_.position_ = node.position_ + pad->position;
+                            cur_node_.position_.x += node.size_.x-4; // we need to set the output pad position
+                        }
+
+                        // we could start dragging output now
+                        if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == pad.get())
+                        {
+                            cur_node_.state_ = NodeState_DraggingOutput;
+                        }
+
+                        consider_io = true;
+                    }
+                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == pad.get())
+                    {
+                        cur_node_.Reset(); // we are not hovering this last hovered output anymore
+                    }
+
+                    ////////////////////////////////////////////////////////////////////////////////
+
+                    ImColor color = ImColor(0.5f, 0.5f, 0.5f, 1.0f);
+
+                    if (pad->connections_ > 0)
+                    {
+                        drawList->AddCircleFilled(pad_output_pos, (input_name_size.y / 3.0f), ImColor(0.5f, 0.5f, 0.5f, 1.0f));
+                    }
+
+                    // currently we are dragin some input, check if there is a possibilty to connect here (this output)
+                    if (cur_node_.state_ == NodeState_DraggingInput || cur_node_.state_ == NodeState_DraggingInputValid)
+                    {
+                        // check is dragging input are not from the same node
+                        if (cur_node_.node_ != node.Get() && cur_node_.connection_->type == pad->type)
+                        {
+                            color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
+
+                            if (consider_io)
+                            {
+                                cur_node_.state_ = NodeState_DraggingInputValid;
+                                drawList->AddCircleFilled(pad_output_pos, (input_name_size.y / 3.0f), color);
+                                /* TODO
+                                if (!ImGui::IsMouseDown(0))
+                                {
+                                    cur_node_.connection_->target_ = node.Get();
+                                    cur_node_.connection_->input_ = connection.get();
+                                    cur_node_.connection_->connections_ = 1;
+
+                                    connection->connections_++;
+
+                                    //****
+                                    // Call subscribe as an output is connected to an input
+                                    //****
+                                    ConnectionAdded(node.Get(), cur_node_.node_,  connection.get());
+                                    cur_node_.Reset(NodeState_HoverIO);
+                                    cur_node_.node_ = node.Get();
+                                    cur_node_.connection_ = connection.get();
+                                    cur_node_.position_ = node_rect_min + connection->position_;
+
+                                }*/
+                            }
+                        }
+                    }
+
+                    consider_io |= cur_node_.state_ == NodeState_HoverIO;
+                    consider_io |= cur_node_.state_ == NodeState_DraggingOutput;
+                    consider_io |= cur_node_.state_ == NodeState_DraggingOutputValid;
+                    consider_io &= cur_node_.connection_ == pad.get();
+
+                    if (consider_io)
+                    {
+                        color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
+
+                        if (cur_node_.state_ != NodeState_HoverIO)
+                        {
+                            drawList->AddCircleFilled(pad_output_pos, (input_name_size.y / 3.0f), color);
+                        }
+                    }
+
+                    drawList->AddCircle(pad_output_pos, (input_name_size.y / 3.0f), color, ((int)(6.0f * canvas_scale_) + 10), (1.5f * canvas_scale_));
+                }
+            }
+
 
 			////////////////////////////////////////////////////////////////////////////////
 
-			for (auto& connection : node.outputs_)
+            /*for (auto& connection : node.outputs_)
 			{
 				if (connection->type_ == ConnectionType_None)
 				{
@@ -957,108 +1033,11 @@ namespace ImGui
 				bool consider_io = false;
 
 				ImVec2 output_name_size = ImGui::CalcTextSize(connection->name_.c_str());
-				ImVec2 connection_pos = node_rect_min + (connection->position_ * canvas_scale_);
 
-				{
-					ImVec2 pos = connection_pos;
-					pos += ImVec2(-output_name_size.x - (output_name_size.y * 0.75f), -output_name_size.y / 2.0f);
-
-					ImGui::SetCursorScreenPos(pos);
-					ImGui::Text("%s", connection->name_.c_str());
-				}
-
-				if (IsConnectorHovered(connection_pos, (output_name_size.y / 2.0f)))
-				{
-                    consider_io |= cur_node_.state_ == NodeState_Default;
-                    consider_io |= cur_node_.state_ == NodeState_HoverConnection;
-                    consider_io |= cur_node_.state_ == NodeState_HoverNode;
-
-					// from nothing to hovered output
-					if (consider_io)
-					{
-                        cur_node_.Reset(NodeState_HoverIO);
-                        cur_node_.node_ = node.Get();
-                        cur_node_.connection_ = connection.get();
-                        cur_node_.position_ = node.position_ + connection->position_;
-					}
-
-                    // we could start dragging output now
-                    if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == connection.get())
-					{
-                        cur_node_.state_ = NodeState_DraggingOutput;
-					}
-
-					consider_io = true;
-				}
-                else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == connection.get())
-				{
-                    cur_node_.Reset(); // we are not hovering this last hovered output anymore
-				}
-
-				////////////////////////////////////////////////////////////////////////////////
-
-				ImColor color = ImColor(0.5f, 0.5f, 0.5f, 1.0f);
-
-				if (connection->connections_ > 0)
-				{
-					drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), ImColor(0.5f, 0.5f, 0.5f, 1.0f));
-				}
-
-				// currently we are dragin some input, check if there is a possibilty to connect here (this output)
-                if (cur_node_.state_ == NodeState_DraggingInput || cur_node_.state_ == NodeState_DraggingInputValid)
-				{
-                    // check is dragging input are not from the same node
-                    if (cur_node_.node_ != node.Get() && cur_node_.connection_->type_ == connection->type_)
-					{
-						color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
-
-						if (consider_io)
-						{
-                            cur_node_.state_ = NodeState_DraggingInputValid;
-							drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
-
-							if (!ImGui::IsMouseDown(0))
-							{
-                                cur_node_.connection_->target_ = node.Get();
-                                cur_node_.connection_->input_ = connection.get();
-                                cur_node_.connection_->connections_ = 1;
-
-								connection->connections_++;
-
-                                //****
-                                // Call subscribe as an output is connected to an input
-                                //****
-                                ConnectionAdded(node.Get(), cur_node_.node_,  connection.get());
-                                cur_node_.Reset(NodeState_HoverIO);
-                                cur_node_.node_ = node.Get();
-                                cur_node_.connection_ = connection.get();
-                                cur_node_.position_ = node_rect_min + connection->position_;
-
-							}
-						}
-					}
-				}
-
-                consider_io |= cur_node_.state_ == NodeState_HoverIO;
-                consider_io |= cur_node_.state_ == NodeState_DraggingOutput;
-                consider_io |= cur_node_.state_ == NodeState_DraggingOutputValid;
-                consider_io &= cur_node_.connection_ == connection.get();
-
-				if (consider_io)
-				{
-					color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
-
-                    if (cur_node_.state_ != NodeState_HoverIO)
-					{
-						drawList->AddCircleFilled(connection_pos, (output_name_size.y / 3.0f), color);
-					}
-				}
-
-                drawList->AddCircle(connection_pos, (output_name_size.y / 3.0f), color, ((int)(6.0f * canvas_scale_) + 10), (1.5f * canvas_scale_));
-			}
+            }*/
 			
 			////////////////////////////////////////////////////////////////////////////////		
-		}
+        }
 
 		////////////////////////////////////////////////////////////////////////////////
 
@@ -1152,9 +1131,9 @@ namespace ImGui
 			{
                 cur_node_.Reset(NodeState_Block);
 
-				for (auto& node : nodes_types_)
+                for (auto& node : nodes_types2)
 				{
-					if (ImGui::MenuItem(node.name_.c_str()))
+                    if (ImGui::MenuItem(node.name.c_str()))
 					{					
                         cur_node_.Reset();
                         cur_node_.node_ = CreateNodeFromType((canvas_mouse_ - canvas_scroll_) / canvas_scale_, node);
