@@ -421,7 +421,7 @@ namespace ImGui
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		bool IsConnectorHovered(ImVec2 connection, float radius)
+        bool IsPadHovered(ImVec2 connection, float radius)
 		{
 
 			ImVec2 delta = ImGui::GetIO().MousePos - connection;
