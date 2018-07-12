@@ -432,6 +432,7 @@ namespace ImGui
 		Node* GetHoverNode(ImVec2 offset, ImVec2 pos);
 		void DisplayNode(ImDrawList* drawList, ImVec2 offset, Node& node);
         void DeleteNodePadLink(NodePadLink* link);
+        void DeleteSelectedNodes();
 		////////////////////////////////////////////////////////////////////////////////
 		
 		void UpdateScroll();

@@ -103,7 +103,7 @@ namespace ImGui
 
             if (selected)
             {
-                draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 1.0f, 0.25f), 4.0f * canvas_scale_);
+                draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(0.f, 1.0f, 0.f, 0.25f), 4.0f * canvas_scale_);
             }
         }
 	}
@@ -127,6 +127,47 @@ namespace ImGui
         link->source->connections_--;
         link->sink->connections_--;
         delete link;
+    }
+
+    void NodeEditor::DeleteSelectedNodes() {
+        std::vector<std::unique_ptr<Node>> replacement;
+        replacement.reserve(nodes_.size());
+
+        std::vector<NodePadLink*> delete_links;
+        delete_links.reserve(nodes_links.size());
+        // delete connections
+        // todo iterate the nodepadlink vector instead of nodes vector???
+        for (auto& node : nodes_)
+        {
+            if ( node->id_ > 0 ) {
+                replacement.push_back(std::move(node));
+                continue;  // node not selected
+            }
+
+            int connections = 0;
+            for (auto& pad : node->pads)
+            {
+                connections += pad->connections_;
+            }
+            if ( connections == 0 ) continue; // no links to this node
+
+            for (auto& link : nodes_links)
+            {
+                if ( link->source->owner == node.get() ||
+                     link->sink->owner == node.get() )
+                {
+                    //mark this connection for deletion
+                    delete_links.push_back(link);
+                }
+            }
+        }
+        for ( auto& link : delete_links)
+        {
+            DeleteNodePadLink(link);
+        }
+
+        // save not selected nodes
+        nodes_ = std::move(replacement);
     }
 
     NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType2& type)
@@ -478,45 +519,7 @@ namespace ImGui
 				// delete all selected nodes
 				if (ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Delete]))
 				{
-					std::vector<std::unique_ptr<Node>> replacement;
-					replacement.reserve(nodes_.size());
-
-					// delete connections
-                    // todo iterate the nodepadlink vector instead of nodes vector???
-					for (auto& node : nodes_)
-					{	
-                        for (auto& pad : node->pads)
-						{
-                            if (pad->connections_ == 0)
-							{
-								continue;
-							}
-
-                            //if (node->id_ < 0)
-                            //{ not sure what todo, this decreases the connection counter at the input nodepad
-                            //	pad->input_->connections_--;
-                            //}
-							
-                            //if (pad->target_->id_ <0)
-                            //{
-                            //	pad->target_ = nullptr;
-                            //	pad->input_ = nullptr;
-                            //	pad->connections_ = 0;
-                            //}
-						}
-					}
-
-					// save not selected nodes
-					for (auto& node : nodes_)
-					{
-						if (node->id_ > 0)
-						{
-							replacement.push_back(std::move(node));
-						}
-					}
-					
-					nodes_ = std::move(replacement);
-					
+                    DeleteSelectedNodes();
                     cur_node_.Reset();
 					break;
 				}
