@@ -41,7 +41,70 @@ namespace ImGui
 
     void NodeEditor::RenderLines(ImDrawList* draw_list, ImVec2 offset)
 	{
-        return; // TODO iterate the pads vector?
+
+        for (auto& link : nodes_links)
+        {
+            ImVec2 p1 = offset;
+            ImVec2 p4 = offset;
+
+            // source
+            if ( link->source->owner->state_ > 0 ) // we are connected from a not collapsed source node
+            {
+                p1 += ((link->source->owner->position_ + link->source->position_out) * canvas_scale_);
+            }
+            else //we are connected from a collapsed node
+            {
+                p1 += ((link->source->owner->position_ + ImVec2(link->source->owner->size_.x, link->source->owner->size_.y / 2.0f)) * canvas_scale_);
+            }
+
+            // sink
+            if ( link->sink->owner->state_ > 0 ) // we are connected to a not collapsed source node
+            {
+                p4 += ((link->sink->owner->position_ + link->sink->position) * canvas_scale_);
+            }
+            else //we are connected to a collapsed node
+            {
+                p4 += ((link->sink->owner->position_ + ImVec2(link->sink->owner->size_.x, link->sink->owner->size_.y / 2.0f)) * canvas_scale_);
+            }
+
+            // default bezier control points
+            ImVec2 p2 = p1 + (ImVec2(+50.0f, 0.0f) * canvas_scale_);
+            ImVec2 p3 = p4 + (ImVec2(-50.0f, 0.0f) * canvas_scale_);
+
+            // what does this do? probably link selection???
+            if (cur_node_.state_ == NodeState_Default)
+            {
+                const float distance_squared = GetSquaredDistanceToBezierCurve(ImGui::GetIO().MousePos, p1, p2, p3, p4);
+
+                if (distance_squared < (10.0f * 10.0f))
+                {
+                    cur_node_.Reset(NodeState_HoverConnection);
+
+                    cur_node_.rect_ = ImRect
+                    (
+                        (link->sink->owner->position_ + link->sink->position),
+                        //(connection->target_->position_ + connection->input_->position_),
+                        (link->source->owner->position_ + link->source->position_out)
+                        //(node->position_ + connection->position_)
+                    );
+
+                    cur_node_.node_ = link->source->owner->Get();
+                    cur_node_.connection_ = link->source->Get();
+                }
+            }
+
+            bool selected = false;
+            selected |= cur_node_.state_ == NodeState_SelectedConnection;
+            selected |= cur_node_.state_ == NodeState_DraggingConnection;
+            selected &= cur_node_.connection_ == link->source->Get();
+
+            draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(0.5f, 0.5f, 0.5f, 1.0f), 2.0f * canvas_scale_);
+
+            if (selected)
+            {
+                draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 1.0f, 0.25f), 4.0f * canvas_scale_);
+            }
+        }
         /*for (auto& node : nodes_)
 		{
 			for (auto& connection : node->inputs_)
@@ -140,6 +203,7 @@ namespace ImGui
                 pad->name = it->name;
                 pad->access = it->access;
                 pad->format = it->format;
+                pad->owner = node.get();
                 node->pads.push_back(std::move(pad));
                 ++it;
             }
@@ -184,6 +248,7 @@ namespace ImGui
 
             pads_size.y += half;
             pad->position = ImVec2(pads_size.x, pads_size.y);
+            pad->position_out = ImVec2(pads_size.x + node->size_.x, pads_size.y);
             pads_size.y += half;
 		}
 	
@@ -881,21 +946,18 @@ namespace ImGui
 
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    /* TODO use NodePadLinks
-                                    if (pad->input_)
-                                    {
-                                        connection->input_->connections_--;
-                                    }
+                                    auto link = std::make_unique<NodePadLink>();
+                                    link->source = cur_node_.connection_->Get();
+                                    link->sink = pad.get();
+                                    link->source->connections_++;
+                                    link->sink->connections_++;
+                                    this->nodes_links.push_back(std::move(link));
 
-                                    connection->target_ = cur_node_.node_;
-                                    connection->input_ = cur_node_.connection_;
-                                    connection->connections_ = 1;
-                                    cur_node_.connection_->connections_++;
                                     //****
                                     // Call subscribe as an input is connected to an output
                                     //****
-                                    ConnectionAdded(cur_node_.node_, node.Get(), connection.get());
-                                    */
+                                    //ConnectionAdded(link.get());
+
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
                                     cur_node_.connection_ = pad.get();
@@ -966,7 +1028,7 @@ namespace ImGui
                         drawList->AddCircleFilled(pad_output_pos, (input_name_size.y / 3.0f), ImColor(0.5f, 0.5f, 0.5f, 1.0f));
                     }
 
-                    // currently we are dragin some input, check if there is a possibilty to connect here (this output)
+                    // currently we are draggin some input, check if there is a possibilty to connect here (this output)
                     if (cur_node_.state_ == NodeState_DraggingInput || cur_node_.state_ == NodeState_DraggingInputValid)
                     {
                         // check is dragging input are not from the same node
@@ -978,25 +1040,32 @@ namespace ImGui
                             {
                                 cur_node_.state_ = NodeState_DraggingInputValid;
                                 drawList->AddCircleFilled(pad_output_pos, (input_name_size.y / 3.0f), color);
-                                /* TODO
+                                // if mouse released create a new NodeLink
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    cur_node_.connection_->target_ = node.Get();
-                                    cur_node_.connection_->input_ = connection.get();
-                                    cur_node_.connection_->connections_ = 1;
+                                    auto link = std::make_unique<NodePadLink>();
+                                    link->source = pad.get();
+                                    link->sink = cur_node_.connection_->Get();
+                                    link->source->connections_++;
+                                    link->sink->connections_++;
+                                    this->nodes_links.push_back(std::move(link));
+                                    //cur_node_.connection_->target_ = node.Get();
+                                    //cur_node_.connection_->input_ = pad.Get();
+                                    //cur_node_.connection_->connections_ = 1;
 
-                                    connection->connections_++;
+                                    //connection->connections_++;
 
                                     //****
                                     // Call subscribe as an output is connected to an input
                                     //****
-                                    ConnectionAdded(node.Get(), cur_node_.node_,  connection.get());
+                                    //ConnectionAdded(link);
+
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
-                                    cur_node_.connection_ = connection.get();
-                                    cur_node_.position_ = node_rect_min + connection->position_;
+                                    cur_node_.connection_ = pad.get();
+                                    cur_node_.position_ = node_rect_min + pad->position;
 
-                                }*/
+                                }
                             }
                         }
                     }

@@ -188,11 +188,12 @@ namespace ImGui
         struct NodePad
         {
             ImVec2 position;            // position in node canvas
+            ImVec2 position_out;        // position ofoutput pad, in case pad is an output pad, as a convenience
             std::string name;           // human readable name
             ConnectionType type;        // type of data
             //TODO: std::string widget_type   // type of widget for the gui
             std::string access;         // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
-            std::string format;
+            std::string format;         // to determine data type
             Node* owner;                // owner of the pad
             //TODO: std::set<NodePad*> subscriptions; // list of subscriptions (only used  for output pads)
 
