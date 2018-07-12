@@ -90,6 +90,7 @@ namespace ImGui
 
                     cur_node_.node_ = link->source->owner->Get();
                     cur_node_.connection_ = link->source->Get();
+                    cur_node_.link = link;
                 }
             }
 
@@ -105,72 +106,6 @@ namespace ImGui
                 draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 1.0f, 0.25f), 4.0f * canvas_scale_);
             }
         }
-        /*for (auto& node : nodes_)
-		{
-			for (auto& connection : node->inputs_)
-			{
-				if (connection->connections_ == 0)
-				{
-					continue;
-				}
-	
-				ImVec2 p1 = offset;
-				ImVec2 p4 = offset;
-
-				if (connection->target_->state_ > 0)
-				{	// we are connected to output of not a collapsed node
-					p1 += ((connection->target_->position_ + connection->input_->position_) * canvas_scale_);
-				}
-				else
-				{	// we are connected to output of a collapsed node
-					p1 += ((connection->target_->position_ + ImVec2(connection->target_->size_.x, connection->target_->size_.y / 2.0f)) * canvas_scale_);
-				}
-				
-				if (node->state_ > 0)
-				{	// we are not a collapsed node
-					p4 += ((node->position_ + connection->position_) * canvas_scale_);
-				}
-				else
-				{	// we are a collapsed node
-					p4 += ((node->position_ + ImVec2(0.0f, node->size_.y / 2.0f)) * canvas_scale_);
-				}
-
-				// default bezier control points
-				ImVec2 p2 = p1 + (ImVec2(+50.0f, 0.0f) * canvas_scale_);
-				ImVec2 p3 = p4 + (ImVec2(-50.0f, 0.0f) * canvas_scale_);
-
-                if (cur_node_.state_ == NodeState_Default)
-				{
-					const float distance_squared = GetSquaredDistanceToBezierCurve(ImGui::GetIO().MousePos, p1, p2, p3, p4);
-
-					if (distance_squared < (10.0f * 10.0f))
-					{
-                        cur_node_.Reset(NodeState_HoverConnection);
-
-                        cur_node_.rect_ = ImRect
-						(
-							(connection->target_->position_ + connection->input_->position_),
-							(node->position_ + connection->position_)
-						);
-
-                        cur_node_.node_ = node->Get();
-                        cur_node_.connection_ = connection.get();
-					}
-				}
-	
-				bool selected = false;
-                selected |= cur_node_.state_ == NodeState_SelectedConnection;
-                selected |= cur_node_.state_ == NodeState_DraggingConnection;
-                selected &= cur_node_.connection_ == connection.get();
-							
-				draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(0.5f, 0.5f, 0.5f, 1.0f), 2.0f * canvas_scale_);
-
-				if (selected)
-				{
-					draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(1.0f, 1.0f, 1.0f, 0.25f), 4.0f * canvas_scale_);
-				}
-			}
-        }*/
 	}
 
     void NodeEditor::DisplayNodes(ImDrawList* drawList, ImVec2 offset)
@@ -703,6 +638,19 @@ namespace ImGui
 
                     cur_node_.state_ = NodeState_DraggingConnection;
 				}
+
+                if (ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Delete]))
+                {
+                    // delete selected connection
+                    // first fins the link index
+                    this->nodes_links.erase
+                            (std::remove(nodes_links.begin(), nodes_links.end(), cur_node_.link),
+                             nodes_links.end());
+                    cur_node_.link->source->connections_--;
+                    cur_node_.link->sink->connections_--;
+                    delete cur_node_.link;
+                    cur_node_.Reset(NodeState_Default);
+                }
 			} break;
 
             case NodeState_DraggingConnection:
@@ -946,12 +894,12 @@ namespace ImGui
 
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    auto link = std::make_unique<NodePadLink>();
+                                    auto link = new NodePadLink();
                                     link->source = cur_node_.connection_->Get();
                                     link->sink = pad.get();
                                     link->source->connections_++;
                                     link->sink->connections_++;
-                                    this->nodes_links.push_back(std::move(link));
+                                    this->nodes_links.push_back(link);
 
                                     //****
                                     // Call subscribe as an input is connected to an output
@@ -1043,17 +991,12 @@ namespace ImGui
                                 // if mouse released create a new NodeLink
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    auto link = std::make_unique<NodePadLink>();
+                                    auto link = new NodePadLink();
                                     link->source = pad.get();
                                     link->sink = cur_node_.connection_->Get();
                                     link->source->connections_++;
                                     link->sink->connections_++;
-                                    this->nodes_links.push_back(std::move(link));
-                                    //cur_node_.connection_->target_ = node.Get();
-                                    //cur_node_.connection_->input_ = pad.Get();
-                                    //cur_node_.connection_->connections_ = 1;
-
-                                    //connection->connections_++;
+                                    this->nodes_links.push_back(link);
 
                                     //****
                                     // Call subscribe as an output is connected to an input

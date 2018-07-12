@@ -336,13 +336,14 @@ namespace ImGui
 
 				node_ = nullptr;
 				connection_ = nullptr;
+                link = nullptr;
 			}
 		};
 
 		////////////////////////////////////////////////////////////////////////////////
 
 		std::vector<std::unique_ptr<Node>> nodes_;
-        std::vector<std::unique_ptr<NodePadLink>> nodes_links;
+        std::vector<NodePadLink*> nodes_links;
 
 		int32_t id_;
         currentNode cur_node_;
