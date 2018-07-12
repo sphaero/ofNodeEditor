@@ -42,7 +42,7 @@ namespace ImGui
     void NodeEditor::RenderLines(ImDrawList* draw_list, ImVec2 offset)
 	{
 
-        for (auto& link : nodes_links)
+        for (auto& link : node_links)
         {
             ImVec2 p1 = offset;
             ImVec2 p4 = offset;
@@ -127,7 +127,7 @@ namespace ImGui
         link->sink = sink;
         link->source->connections_++;
         link->sink->connections_++;
-        this->nodes_links.push_back(link);
+        this->node_links.push_back(link);
 
         //****
         // Call subscribe as a source is connected to a sink
@@ -136,9 +136,9 @@ namespace ImGui
     }
 
     void NodeEditor::DeleteNodePadLink(NodePadLink* link) {
-        this->nodes_links.erase(
-                std::remove(nodes_links.begin(), nodes_links.end(), link),
-                nodes_links.end());
+        this->node_links.erase(
+                std::remove(node_links.begin(), node_links.end(), link),
+                node_links.end());
         LinkDeleted(link->source, link->sink);
         link->source->connections_--;
         link->sink->connections_--;
@@ -150,7 +150,7 @@ namespace ImGui
         replacement.reserve(nodes_.size());
 
         std::vector<NodePadLink*> delete_links;
-        delete_links.reserve(nodes_links.size());
+        delete_links.reserve(node_links.size());
         // delete connections
         // todo iterate the nodepadlink vector instead of nodes vector???
         for (auto& node : nodes_)
@@ -167,7 +167,7 @@ namespace ImGui
             }
             if ( connections == 0 ) continue; // no links to this node
 
-            for (auto& link : nodes_links)
+            for (auto& link : node_links)
             {
                 if ( link->source->owner == node.get() ||
                      link->sink->owner == node.get() )
@@ -186,7 +186,7 @@ namespace ImGui
         nodes_ = std::move(replacement);
     }
 
-    NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType2& type)
+    NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType& type)
 	{
 		auto node = std::make_unique<Node>();
 
@@ -1145,7 +1145,7 @@ namespace ImGui
 			{
                 cur_node_.Reset(NodeState_Block);
 
-                for (auto& node : nodes_types2)
+                for (auto& node : node_types)
 				{
                     if (ImGui::MenuItem(node.name.c_str()))
 					{					

@@ -20,26 +20,7 @@
 
 namespace ImGui
 {
-	enum ConnectionType : uint32_t
-	{
-		ConnectionType_None = 0,
-        ConnectionType_Float,
-        ConnectionType_Int,
-        ConnectionType_String,
-        ConnectionType_Vec2,
-        ConnectionType_Vec3,
-        ConnectionType_Vec4,
-        ConnectionType_OSC
-	};
-
 	////////////////////////////////////////////////////////////////////////////////
-
-	struct NodeType
-	{
-		std::string name_;
-		std::vector<std::pair<std::string, ConnectionType>> inputs_;
-		std::vector<std::pair<std::string, ConnectionType>> outputs_;
-	};
 
     struct NodePadType
     {
@@ -48,7 +29,7 @@ namespace ImGui
         std::string format;
     };
 
-    struct NodeType2
+    struct NodeType
     {
         std::string name;
         std::vector<NodePadType> pads;
@@ -80,7 +61,7 @@ namespace ImGui
 	static constexpr auto bezier_weights_ = BezierWeights<16>();
 
 	////////////////////////////////////////////////////////////////////////////////
-    static const std::vector<ImGui::NodeType2> nodes_types2 =
+    static const std::vector<ImGui::NodeType> node_types =
     {
         ////////////////////////////////////////////////////////////////////////////////
         {
@@ -102,87 +83,6 @@ namespace ImGui
         }
     };
 
-	static const std::vector<ImGui::NodeType> nodes_types_=
-	{
-		////////////////////////////////////////////////////////////////////////////////
-		{
-            { std::string("MOCAPBridge") },
-
-			{
-                { std::string("Trigger"), ImGui::ConnectionType_Int }
-			},
-
-			{
-                { std::string("Markers"), ImGui::ConnectionType_OSC },
-                { std::string("Skeletons"), ImGui::ConnectionType_OSC }
-            }
-		},
-        {
-            { std::string("OSCSender") },
-            {
-               { std::string("Data"), ImGui::ConnectionType_OSC },
-               { std::string("Host"), ImGui::ConnectionType_String }
-            }
-        },
-        ////////////////////////////////////////////////////////////////////////////////
-        {
-            { std::string("Test") },
-
-            {
-                { std::string("FloatTEST"), ImGui::ConnectionType_Float },
-                { std::string("Int"), ImGui::ConnectionType_Int }
-            },
-
-            {
-                { std::string("Float"), ImGui::ConnectionType_Float }
-            }
-        },
-		////////////////////////////////////////////////////////////////////////////////
-		{
-			{ std::string("BigInput") },
-
-			{
-				{ std::string("Float1"), ImGui::ConnectionType_Float },
-				{ std::string("Float2"), ImGui::ConnectionType_Float },
-				{ std::string("Int1"), ImGui::ConnectionType_Int },
-				{ std::string("Int2"), ImGui::ConnectionType_Int },
-				{ {}, ImGui::ConnectionType_None },
-				{ std::string("Float3"), ImGui::ConnectionType_Float },
-				{ std::string("Float4"), ImGui::ConnectionType_Float },
-				{ std::string("Float5"), ImGui::ConnectionType_Float }
-			},
-
-			{
-				{ std::string("Float1"), ImGui::ConnectionType_Float },
-				{ std::string("Int1"), ImGui::ConnectionType_Int },
-				{ {}, ImGui::ConnectionType_None },
-				{ std::string("Vec1"), ImGui::ConnectionType_Vec3 }
-			}
-		},
-		////////////////////////////////////////////////////////////////////////////////
-		{
-			{ std::string("BigOutput") },
-
-			{
-				{ std::string("VecTEST"), ImGui::ConnectionType_Vec3 },
-				{ {}, ImGui::ConnectionType_None },
-				{ std::string("Int"), ImGui::ConnectionType_Int },
-				{ std::string("Float"), ImGui::ConnectionType_Float }
-			},
-
-			{
-				{ std::string("FloatTEST"), ImGui::ConnectionType_Float },
-				{ std::string("Float"), ImGui::ConnectionType_Float },
-				{ {}, ImGui::ConnectionType_None },
-				{ std::string("Int1"), ImGui::ConnectionType_Int },
-				{ std::string("Int2"), ImGui::ConnectionType_Int },
-				{ {}, ImGui::ConnectionType_None },
-				{ std::string("VecABC"), ImGui::ConnectionType_Vec3 },
-				{ std::string("VecXYZ"), ImGui::ConnectionType_Vec3 }
-			}
-		}
-		////////////////////////////////////////////////////////////////////////////////
-	};
 
 	////////////////////////////////////////////////////////////////////////////////
 
@@ -198,7 +98,6 @@ namespace ImGui
             ImVec2 position;            // position in node canvas
             ImVec2 position_out;        // position ofoutput pad, in case pad is an output pad, as a convenience
             std::string name;           // human readable name
-            ConnectionType type;        // type of data
             //TODO: std::string widget_type   // type of widget for the gui
             std::string access;         // access string, ie r,w,e || s, this also determines whether it is an output(r) or input(w) pad!
             std::string format;         // to determine data type
@@ -211,7 +110,6 @@ namespace ImGui
             NodePad()
             {
                 position = ImVec2(0.0f, 0.0f);
-                type = ConnectionType_None;
                 name = std::string("noname");
                 access = std::string("r");
                 format = std::string("f");
@@ -234,33 +132,6 @@ namespace ImGui
             NodePad* sink;
         };
 
-        struct Connection
-		{
-			ImVec2 position_;
-			std::string name_;
-			ConnectionType type_;
-
-			Node* target_;
-			Connection* input_;
-			uint32_t connections_;
-
-			Connection()
-			{
-				position_ = ImVec2(0.0f, 0.0f);
-
-				type_ = ConnectionType_None;
-
-				target_ = nullptr;
-				input_ = nullptr;
-				connections_ = 0;
-			}
-
-			Connection* Get()
-			{
-				return this;
-			}
-		};
-
 		////////////////////////////////////////////////////////////////////////////////
 
 		enum NodeStateFlag : int32_t
@@ -281,8 +152,6 @@ namespace ImGui
 
             std::string name_;
             std::vector<std::unique_ptr<NodePad>> pads;
-            std::vector<std::unique_ptr<Connection>> inputs_;
-            std::vector<std::unique_ptr<Connection>> outputs_;
 
             Node()
             {
@@ -351,7 +220,7 @@ namespace ImGui
 		////////////////////////////////////////////////////////////////////////////////
 
 		std::vector<std::unique_ptr<Node>> nodes_;
-        std::vector<NodePadLink*> nodes_links;
+        std::vector<NodePadLink*> node_links;
 
 		int32_t id_;
         currentNode cur_node_;
@@ -456,7 +325,7 @@ namespace ImGui
         ~NodeEditor();
 
 		void ProcessNodes();
-        NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType2& type);
+        NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType& type);
         virtual void LinkAdded(NodeEditor::NodePad*& src, NodePad*& sink) {};
         virtual void LinkDeleted(NodeEditor::NodePad*& src, NodePad*& sink) {};
         virtual void NodeAdded(NodeEditor::Node& node) {};
