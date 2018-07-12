@@ -120,6 +120,15 @@ namespace ImGui
 		ImGui::SetWindowFontScale(1.0f);
 	}
 
+    void NodeEditor::DeleteNodePadLink(NodePadLink* link) {
+        this->nodes_links.erase(
+                std::remove(nodes_links.begin(), nodes_links.end(), link),
+                nodes_links.end());
+        link->source->connections_--;
+        link->sink->connections_--;
+        delete link;
+    }
+
     NodeEditor::Node* NodeEditor::CreateNodeFromType(ImVec2 pos, const NodeType2& type)
 	{
 		auto node = std::make_unique<Node>();
@@ -643,12 +652,7 @@ namespace ImGui
                 {
                     // delete selected connection
                     // first fins the link index
-                    this->nodes_links.erase
-                            (std::remove(nodes_links.begin(), nodes_links.end(), cur_node_.link),
-                             nodes_links.end());
-                    cur_node_.link->source->connections_--;
-                    cur_node_.link->sink->connections_--;
-                    delete cur_node_.link;
+                    this->DeleteNodePadLink(cur_node_.link);
                     cur_node_.Reset(NodeState_Default);
                 }
 			} break;
