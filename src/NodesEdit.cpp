@@ -120,10 +120,26 @@ namespace ImGui
 		ImGui::SetWindowFontScale(1.0f);
 	}
 
+    void NodeEditor::AddNodePadLink(NodePad *source, NodePad *sink)
+    {
+        auto link = new NodePadLink();
+        link->source = source;
+        link->sink = sink;
+        link->source->connections_++;
+        link->sink->connections_++;
+        this->nodes_links.push_back(link);
+
+        //****
+        // Call subscribe as a source is connected to a sink
+        //****
+        LinkAdded(link->source, link->sink);
+    }
+
     void NodeEditor::DeleteNodePadLink(NodePadLink* link) {
         this->nodes_links.erase(
                 std::remove(nodes_links.begin(), nodes_links.end(), link),
                 nodes_links.end());
+        LinkDeleted(link->source, link->sink);
         link->source->connections_--;
         link->sink->connections_--;
         delete link;
@@ -837,7 +853,7 @@ namespace ImGui
                 {
                     // TODO: rename to pad...
                     float pad_radius = input_name_size.y/2.f;
-                    if ( IsConnectorHovered(pad_pos, pad_radius) )
+                    if ( IsPadHovered(pad_pos, pad_radius) )
                     {
                         consider_io |= cur_node_.state_ == NodeState_Default;
                         consider_io |= cur_node_.state_ == NodeState_HoverConnection;
@@ -901,17 +917,7 @@ namespace ImGui
 
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    auto link = new NodePadLink();
-                                    link->source = cur_node_.connection_->Get();
-                                    link->sink = pad.get();
-                                    link->source->connections_++;
-                                    link->sink->connections_++;
-                                    this->nodes_links.push_back(link);
-
-                                    //****
-                                    // Call subscribe as an input is connected to an output
-                                    //****
-                                    //ConnectionAdded(link.get());
+                                    AddNodePadLink(cur_node_.connection_->Get(), pad.get());
 
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
@@ -945,7 +951,7 @@ namespace ImGui
                     ImVec2 pad_output_pos = pad_pos;
                     pad_output_pos.x += (node.size_.x-4) * canvas_scale_; //position with 2px inward correction
 
-                    if (IsConnectorHovered(pad_output_pos, (input_name_size.y / 2.0f)))
+                    if (IsPadHovered(pad_output_pos, (input_name_size.y / 2.0f)))
                     {
                         consider_io |= cur_node_.state_ == NodeState_Default;
                         consider_io |= cur_node_.state_ == NodeState_HoverConnection;
@@ -998,23 +1004,12 @@ namespace ImGui
                                 // if mouse released create a new NodeLink
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    auto link = new NodePadLink();
-                                    link->source = pad.get();
-                                    link->sink = cur_node_.connection_->Get();
-                                    link->source->connections_++;
-                                    link->sink->connections_++;
-                                    this->nodes_links.push_back(link);
-
-                                    //****
-                                    // Call subscribe as an output is connected to an input
-                                    //****
-                                    //ConnectionAdded(link);
+                                    AddNodePadLink(pad.get(), cur_node_.connection_->Get());
 
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
                                     cur_node_.connection_ = pad.get();
                                     cur_node_.position_ = node_rect_min + pad->position;
-
                                 }
                             }
                         }

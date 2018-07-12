@@ -9,8 +9,8 @@ class ofNodeEditor : public ImGui::NodeEditor
 public:
     ofNodeEditor();
 
-    void ConnectionAdded(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, ImGui::NodeEditor::Connection* connection);
-    void ConnectionDeleted(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, ImGui::NodeEditor::Connection* connection);
+    void LinkAdded(ImGui::NodeEditor::NodePad*& src, ImGui::NodeEditor::NodePad*& sink);
+    void LinkDeleted(ImGui::NodeEditor::NodePad*& src, ImGui::NodeEditor::NodePad*& sink);
 };
 
 #endif // OFNODEEDITOR_H

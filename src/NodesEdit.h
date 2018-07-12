@@ -431,6 +431,7 @@ namespace ImGui
 
 		Node* GetHoverNode(ImVec2 offset, ImVec2 pos);
 		void DisplayNode(ImDrawList* drawList, ImVec2 offset, Node& node);
+        void AddNodePadLink(NodePad* source, NodePad* sink);
         void DeleteNodePadLink(NodePadLink* link);
         void DeleteSelectedNodes();
 		////////////////////////////////////////////////////////////////////////////////
@@ -448,7 +449,9 @@ namespace ImGui
 
 		void ProcessNodes();
         NodeEditor::Node*  CreateNodeFromType(ImVec2 pos, const NodeType2& type);
-        virtual void ConnectionAdded(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
-        virtual void ConnectionDeleted(NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, NodeEditor::Connection* connection) {};
+        virtual void LinkAdded(NodeEditor::NodePad*& src, NodePad*& sink) {};
+        virtual void LinkDeleted(NodeEditor::NodePad*& src, NodePad*& sink) {};
+        virtual void NodeAdded(NodeEditor::Node& node) {};
+        virtual void NodeDeleted(NodeEditor::Node& node) {};
     };
 }

@@ -5,14 +5,14 @@ ofNodeEditor::ofNodeEditor()
 
 }
 
-void ofNodeEditor::ConnectionAdded(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, ImGui::NodeEditor::Connection* connection)
+void ofNodeEditor::LinkAdded(ImGui::NodeEditor::NodePad*& src, ImGui::NodeEditor::NodePad*& sink)
 {
 
-    ofLogVerbose() << "New Connection: source=" << src->name_ << ":" << connection->name_ << " to " << tgt->name_;
+    ofLogVerbose() << "New Connection: source=" << src->owner->name_ << ":" << " to " << sink->owner->name_;
 }
 
-void ofNodeEditor::ConnectionDeleted(ImGui::NodeEditor::Node* src, ImGui::NodeEditor::Node* tgt, ImGui::NodeEditor::Connection* connection)
+void ofNodeEditor::LinkDeleted(ImGui::NodeEditor::NodePad*& src, ImGui::NodeEditor::NodePad*& sink)
 {
 
-    ofLogVerbose() << "Delete Connection: source=" << src->name_ << ":" << connection->input_->name_ << " to " << connection->target_->name_ << ":" << connection->name_;
+    ofLogVerbose() << "Delete Connection: source=" << src->owner->name_ << " to " << sink->owner->name_;
 }
