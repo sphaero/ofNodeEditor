@@ -89,7 +89,7 @@ namespace ImGui
                     );
 
                     cur_node_.node_ = link->source->owner->Get();
-                    cur_node_.connection_ = link->source->Get();
+                    cur_node_.selected_pad = link->source->Get();
                     cur_node_.link = link;
                 }
             }
@@ -97,7 +97,7 @@ namespace ImGui
             bool selected = false;
             selected |= cur_node_.state_ == NodeState_SelectedConnection;
             selected |= cur_node_.state_ == NodeState_DraggingConnection;
-            selected &= cur_node_.connection_ == link->source->Get();
+            selected &= cur_node_.selected_pad == link->source->Get();
 
             draw_list->AddBezierCurve(p1, p2, p3, p4, ImColor(0.5f, 0.5f, 0.5f, 1.0f), 2.0f * canvas_scale_);
 
@@ -692,7 +692,7 @@ namespace ImGui
 
                 cur_node_.node_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
                 // todo: only used to draw a bezier using mouse pos so don't do this in the struct?
-                //cur_node_.connection_->target_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
+                //cur_node_.selected_pad->target_->position_ += ImGui::GetIO().MouseDelta / canvas_scale_;
 			} break;
 		}
 	}
@@ -864,12 +864,12 @@ namespace ImGui
                         {
                             cur_node_.Reset(NodeState_HoverIO);
                             cur_node_.node_ = node.Get();
-                            cur_node_.connection_ = pad.get();
+                            cur_node_.selected_pad = pad.get();
                             cur_node_.position_ = node.position_ + pad->position;
                         }
 
                         // we could start Dragging input now
-                        if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == pad.get())
+                        if (ImGui::IsMouseClicked(0) && cur_node_.selected_pad == pad.get())
                         {
                             cur_node_.state_ = NodeState_DraggingInput;
 
@@ -888,7 +888,7 @@ namespace ImGui
 
                         consider_io = true;
                     }
-                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == pad.get())
+                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.selected_pad == pad.get())
                     {
                         cur_node_.Reset(); // we are not hovering this last hovered input anymore
                     }
@@ -906,7 +906,7 @@ namespace ImGui
                     if (cur_node_.state_ == NodeState_DraggingOutput || cur_node_.state_ == NodeState_DraggingOutputValid)
                     {
                         // check is dragging output are not from the same node
-                        if (cur_node_.node_ != node.Get() && cur_node_.connection_->type == pad->type)
+                        if (cur_node_.node_ != node.Get() && cur_node_.selected_pad->format.compare(pad->format) == 0 )
                         {
                             color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -917,11 +917,11 @@ namespace ImGui
 
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    AddNodePadLink(cur_node_.connection_->Get(), pad.get());
+                                    AddNodePadLink(cur_node_.selected_pad->Get(), pad.get());
 
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
-                                    cur_node_.connection_ = pad.get();
+                                    cur_node_.selected_pad = pad.get();
                                     cur_node_.position_ = node_rect_min + pad->position;
                                 }
                             }
@@ -931,7 +931,7 @@ namespace ImGui
                     consider_io |= cur_node_.state_ == NodeState_HoverIO;
                     consider_io |= cur_node_.state_ == NodeState_DraggingInput;
                     consider_io |= cur_node_.state_ == NodeState_DraggingInputValid;
-                    consider_io &= cur_node_.connection_ == pad.get();
+                    consider_io &= cur_node_.selected_pad == pad.get();
 
                     if (consider_io)
                     {
@@ -962,20 +962,20 @@ namespace ImGui
                         {
                             cur_node_.Reset(NodeState_HoverIO);
                             cur_node_.node_ = node.Get();
-                            cur_node_.connection_ = pad.get();
+                            cur_node_.selected_pad = pad.get();
                             cur_node_.position_ = node.position_ + pad->position;
                             cur_node_.position_.x += node.size_.x-4; // we need to set the output pad position
                         }
 
                         // we could start dragging output now
-                        if (ImGui::IsMouseClicked(0) && cur_node_.connection_ == pad.get())
+                        if (ImGui::IsMouseClicked(0) && cur_node_.selected_pad == pad.get())
                         {
                             cur_node_.state_ = NodeState_DraggingOutput;
                         }
 
                         consider_io = true;
                     }
-                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.connection_ == pad.get())
+                    else if (cur_node_.state_ == NodeState_HoverIO && cur_node_.selected_pad == pad.get())
                     {
                         cur_node_.Reset(); // we are not hovering this last hovered output anymore
                     }
@@ -993,7 +993,7 @@ namespace ImGui
                     if (cur_node_.state_ == NodeState_DraggingInput || cur_node_.state_ == NodeState_DraggingInputValid)
                     {
                         // check is dragging input are not from the same node
-                        if (cur_node_.node_ != node.Get() && cur_node_.connection_->type == pad->type)
+                        if (cur_node_.node_ != node.Get() && cur_node_.selected_pad->format.compare(pad->format) == 0)
                         {
                             color = ImColor(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -1004,11 +1004,11 @@ namespace ImGui
                                 // if mouse released create a new NodeLink
                                 if (!ImGui::IsMouseDown(0))
                                 {
-                                    AddNodePadLink(pad.get(), cur_node_.connection_->Get());
+                                    AddNodePadLink(pad.get(), cur_node_.selected_pad->Get());
 
                                     cur_node_.Reset(NodeState_HoverIO);
                                     cur_node_.node_ = node.Get();
-                                    cur_node_.connection_ = pad.get();
+                                    cur_node_.selected_pad = pad.get();
                                     cur_node_.position_ = node_rect_min + pad->position;
                                 }
                             }
@@ -1018,7 +1018,7 @@ namespace ImGui
                     consider_io |= cur_node_.state_ == NodeState_HoverIO;
                     consider_io |= cur_node_.state_ == NodeState_DraggingOutput;
                     consider_io |= cur_node_.state_ == NodeState_DraggingOutputValid;
-                    consider_io &= cur_node_.connection_ == pad.get();
+                    consider_io &= cur_node_.selected_pad == pad.get();
 
                     if (consider_io)
                     {

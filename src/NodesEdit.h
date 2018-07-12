@@ -91,6 +91,14 @@ namespace ImGui
                 { std::string("Markers"), std::string("re"), std::string("f") },
                 { std::string("Skeleton"), std::string("re"), std::string("f") }
             }
+        },
+        {
+            { std::string("OSCSender") },
+
+            {
+                { std::string("Host Address"), std::string("sw"), std::string("s") },
+                { std::string("data"), std::string("w"), std::string("f") },
+            }
         }
     };
 
@@ -324,7 +332,7 @@ namespace ImGui
 			ImRect rect_;
 
 			Node* node_;
-            NodePad* connection_;
+            NodePad* selected_pad;
             NodePadLink* link;
 
             void Reset(NodeState state = NodeState_Default)
@@ -335,7 +343,7 @@ namespace ImGui
 				rect_ = ImRect(0.0f, 0.0f, 0.0f, 0.0f);
 
 				node_ = nullptr;
-				connection_ = nullptr;
+                selected_pad = nullptr;
                 link = nullptr;
 			}
 		};
